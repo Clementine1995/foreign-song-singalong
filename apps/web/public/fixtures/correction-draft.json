@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "type": "romaji_correction_draft",
+  "source": {
+    "projectFile": "annotation-ja.json",
+    "referenceFile": "reference-romaji.txt",
+    "note": "根据参考 romaji 差异生成的草稿。只有能确认 kana 读法时，才手动填写 suggestedKana。"
+  },
+  "corrections": [
+    {
+      "lineId": "line-002",
+      "index": 1,
+      "original": "忘れない",
+      "currentKana": "わすれない",
+      "currentRomaji": "wasure nai",
+      "referenceRomaji": "wasuremasen",
+      "suggestedRomaji": "wasuremasen",
+      "suggestedKana": null,
+      "status": "reading_mismatch",
+      "reviewReasons": ["unknown_kanji_reading"],
+      "note": "参考 romaji 与当前生成结果不同。填写 suggestedKana 前，请先人工确认 kana 读法。"
+    },
+    {
+      "lineId": "line-003",
+      "index": 2,
+      "original": "ありがとう",
+      "currentKana": "ありがとう",
+      "currentRomaji": "arigatou",
+      "referenceRomaji": "a ri ga to u",
+      "suggestedRomaji": "a ri ga to u",
+      "suggestedKana": null,
+      "status": "format_difference",
+      "reviewReasons": [],
+      "note": "只有格式差异。通常可以应用 suggestedRomaji，不需要改 kana。"
+    }
+  ]
+}

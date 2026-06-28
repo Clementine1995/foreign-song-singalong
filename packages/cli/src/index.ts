@@ -5,9 +5,14 @@ import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import {
   assertAnnotationProject,
+  applyReferenceRomajiOverrides,
   createAnnotationProjectWithReading,
+  compareReferenceRomaji,
+  compareProjectReferenceRomaji,
+  createRomajiCorrectionDraft,
   type AnnotationProject,
   parseLyrics,
+  toReferenceRomajiMarkdown,
   toMarkdown,
   toPlainText,
   validateAnnotationProject
@@ -33,11 +38,210 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       return validate(args);
     case "export":
       return exportProject(args);
+    case "compare-romaji":
+      return compareRomaji(args);
+    case "apply-romaji-reference":
+      return applyRomajiReference(args);
+    case "draft-romaji-corrections":
+      return draftRomajiCorrections(args);
     default:
       return {
         code: 1,
         stderr: `Error: unknown command "${command}".\nNext step: run singbridge --help.`
       };
+  }
+}
+
+async function draftRomajiCorrections(args: string[]): Promise<CliResult> {
+  const inputPath = args[0];
+  const referencePath = readOption(args, "--reference");
+  const outPath = readOption(args, "--out");
+
+  if (!inputPath || inputPath.startsWith("--")) {
+    return {
+      code: 1,
+      stderr: "Error: project JSON file is required.\nNext step: run singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json."
+    };
+  }
+
+  if (!referencePath) {
+    return {
+      code: 1,
+      stderr: "Error: --reference is required.\nNext step: provide a UTF-8 text file with one reference romaji line per lyric line."
+    };
+  }
+
+  if (!outPath) {
+    return {
+      code: 1,
+      stderr: "Error: --out is required.\nNext step: provide an output correction draft path."
+    };
+  }
+
+  const loaded = await loadProject(inputPath);
+  if (!loaded.ok) {
+    return loaded.result;
+  }
+
+  let reference: string;
+  try {
+    reference = await readFile(referencePath, "utf8");
+  } catch (error) {
+    return {
+      code: 1,
+      stderr: `Error: could not read reference romaji file "${referencePath}".\nCause: ${formatCause(error)}\nNext step: check the path and ensure it is UTF-8 text.`
+    };
+  }
+
+  const report = compareProjectReferenceRomaji(loaded.project, reference);
+  const draft = createRomajiCorrectionDraft(report, { projectFile: inputPath, referenceFile: referencePath });
+
+  try {
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, `${JSON.stringify(draft, null, 2)}\n`, "utf8");
+  } catch (error) {
+    return {
+      code: 3,
+      stderr: `Error: could not write output file "${outPath}".\nCause: ${formatCause(error)}\nNext step: choose a writable output path.`
+    };
+  }
+
+  return {
+    code: 0,
+    stdout: `Drafted ${draft.corrections.length} romaji corrections -> ${outPath}`
+  };
+}
+
+async function applyRomajiReference(args: string[]): Promise<CliResult> {
+  const inputPath = args[0];
+  const referencePath = readOption(args, "--reference");
+  const outPath = readOption(args, "--out");
+
+  if (!inputPath || inputPath.startsWith("--")) {
+    return {
+      code: 1,
+      stderr: "Error: project JSON file is required.\nNext step: run singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json."
+    };
+  }
+
+  if (!referencePath) {
+    return {
+      code: 1,
+      stderr: "Error: --reference is required.\nNext step: provide a UTF-8 text file with one reference romaji line per lyric line."
+    };
+  }
+
+  if (!outPath) {
+    return {
+      code: 1,
+      stderr: "Error: --out is required.\nNext step: provide an output JSON path."
+    };
+  }
+
+  const loaded = await loadProject(inputPath);
+  if (!loaded.ok) {
+    return loaded.result;
+  }
+
+  let reference: string;
+  try {
+    reference = await readFile(referencePath, "utf8");
+  } catch (error) {
+    return {
+      code: 1,
+      stderr: `Error: could not read reference romaji file "${referencePath}".\nCause: ${formatCause(error)}\nNext step: check the path and ensure it is UTF-8 text.`
+    };
+  }
+
+  const result = applyReferenceRomajiOverrides(loaded.project, reference);
+  const validation = validateAnnotationProject(result.project);
+  if (!validation.valid) {
+    return {
+      code: 2,
+      stderr: `Error: corrected project is invalid.\nCause: ${validation.issues.map((issue) => `${issue.path} ${issue.message}`).join("; ")}`
+    };
+  }
+
+  try {
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, `${JSON.stringify(result.project, null, 2)}\n`, "utf8");
+  } catch (error) {
+    return {
+      code: 3,
+      stderr: `Error: could not write output file "${outPath}".\nCause: ${formatCause(error)}\nNext step: choose a writable output path.`
+    };
+  }
+
+  return {
+    code: 0,
+    stdout: `Applied ${result.appliedCount} romaji overrides -> ${outPath}${result.preservedCount ? ` (${result.preservedCount} existing overrides preserved)` : ""}`
+  };
+}
+
+async function compareRomaji(args: string[]): Promise<CliResult> {
+  const inputPath = args[0];
+  const referencePath = readOption(args, "--reference");
+  const outPath = readOption(args, "--out");
+
+  if (!inputPath || inputPath.startsWith("--")) {
+    return {
+      code: 1,
+      stderr: "Error: lyrics input file is required.\nNext step: run singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out report.md."
+    };
+  }
+
+  if (!referencePath) {
+    return {
+      code: 1,
+      stderr: "Error: --reference is required.\nNext step: provide a UTF-8 text file with one reference romaji line per lyric line."
+    };
+  }
+
+  if (!outPath) {
+    return {
+      code: 1,
+      stderr: "Error: --out is required.\nNext step: provide an output Markdown report path."
+    };
+  }
+
+  let input: string;
+  let reference: string;
+  try {
+    input = await readFile(inputPath, "utf8");
+  } catch (error) {
+    return {
+      code: 1,
+      stderr: `Error: could not read lyrics file "${inputPath}".\nCause: ${formatCause(error)}\nNext step: check the path and ensure it is UTF-8 text.`
+    };
+  }
+
+  try {
+    reference = await readFile(referencePath, "utf8");
+  } catch (error) {
+    return {
+      code: 1,
+      stderr: `Error: could not read reference romaji file "${referencePath}".\nCause: ${formatCause(error)}\nNext step: check the path and ensure it is UTF-8 text.`
+    };
+  }
+
+  try {
+    const parsed = parseLyrics(input);
+    const report = await compareReferenceRomaji(parsed.lines, reference);
+    const markdown = toReferenceRomajiMarkdown(report);
+
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, markdown, "utf8");
+
+    return {
+      code: 0,
+      stdout: `Compared ${report.lines.length} lines -> ${outPath}`
+    };
+  } catch (error) {
+    const message = error instanceof Error && error.message === "input is empty"
+      ? "Error: lyrics input file is empty.\nNext step: provide a UTF-8 text file with Japanese lyrics."
+      : `Error: romaji comparison failed.\nCause: ${formatCause(error)}`;
+
+    return { code: 2, stderr: message };
   }
 }
 
@@ -251,6 +455,9 @@ function helpText(): string {
     "  singbridge annotate input.txt --language ja --out song.json",
     "  singbridge validate song.json",
     "  singbridge export song.json --format markdown --out song.md",
+    "  singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out report.md",
+    "  singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json",
+    "  singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json",
     "",
     "Export formats: markdown, json, text.",
     "MVP supports Japanese lyrics only. Input must be user-provided UTF-8 text."

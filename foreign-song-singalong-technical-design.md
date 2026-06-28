@@ -136,20 +136,24 @@ Rules:
 
 ### apps/web
 
-Deferred until CLI is stable.
+Read-only prototype added after CLI stabilization.
 
 Expected stack:
 
 - Vue 3
 - Vite
-- Pinia for local project/edit state
+- Local component state for the current read-only prototype
+- Pinia only if edit state becomes complex later
 - Vue Router only if more than one screen is needed
 
 Rules:
 
 - WebUI consumes the same annotation JSON schema as CLI.
 - WebUI must not fork conversion logic into components.
-- WebUI should start from fixture JSON before adding import/edit flows.
+- WebUI must not import tokenizer/runtime conversion code into the browser bundle.
+- WebUI loads CLI-generated JSON files through the browser File API.
+- WebUI can generate copyable CLI command text, but must not execute CLI commands.
+- WebUI should remain read-only until loading, correction overlay review, and reference-romaji workflows are stable.
 
 ## 5. Data Model
 
@@ -494,6 +498,7 @@ As of the current CLI MVP implementation, the repository contains:
 
 - `packages/core`: parsing, annotation schema, validation, Japanese reading, romaji, Chinese pronunciation aid, difficulty rules, manual override resolution, and Markdown/plain-text export.
 - `packages/cli`: command handling and file IO for `annotate`, `validate`, and `export`.
+- `apps/web`: Vue 3 + Vite read-only annotation viewer for CLI-generated JSON files.
 - `packages/core/fixtures/sample-validation-ja.txt`: a short synthetic fixture set for repeatable sample validation.
 
 Implemented CLI commands:
@@ -504,6 +509,9 @@ singbridge validate song.json
 singbridge export song.json --format markdown --out song.md
 singbridge export song.json --format text --out song.txt
 singbridge export song.json --format json --out song.json
+singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out report.md
+singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json
+singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json
 ```
 
 The `annotate` command now uses a local `kuromoji` tokenizer and dictionary behind `packages/core/src/japanese/readingAdapter.ts`. The adapter runs offline and produces kana readings for many kanji-containing Japanese lines. Lines containing kanji still keep `needsReview: true` with `unknown_kanji_reading`, because song lyrics can use special readings that differ from dictionary readings.
@@ -524,6 +532,73 @@ Manual correction behavior:
 - If only `manualOverrides.kana` is supplied, export derives effective romaji, Chinese pronunciation aid, and difficulty notes from that kana.
 - Validation reports path-level errors for malformed manual overrides.
 
+Reference romaji comparison behavior:
+
+- Users may provide a Japanese lyrics file and a separate reference-romaji file with one line per lyric line.
+- The CLI generates romaji through the existing reading adapter and writes a Markdown comparison report.
+- Comparison normalizes case, punctuation, apostrophes, and spacing for mismatch detection.
+- Report statuses are `exact_match`, `format_difference`, `reading_mismatch`, `missing_reference`, and `extra_reference`.
+- `format_difference` and `reading_mismatch` lines include a suggested manual romaji value.
+- Mismatch report lines show original text, current kana, generated romaji, reference romaji, review reasons, and a suggested action.
+- Users may apply those suggestions to an existing project JSON with `apply-romaji-reference`.
+- Applying a reference writes `manualOverrides.romaji`; it does not infer kana from romaji and does not overwrite existing manual romaji overrides.
+- Users may generate a correction draft with `draft-romaji-corrections`.
+- Correction drafts list only actionable `format_difference` and `reading_mismatch` lines.
+- Correction drafts keep `suggestedKana: null` because kana must be filled by a user who can verify the reading.
+
+Correction draft shape:
+
+```json
+{
+  "version": 1,
+  "type": "romaji_correction_draft",
+  "source": {
+    "projectFile": "song.json",
+    "referenceFile": "reference-romaji.txt",
+    "note": "Draft generated from reference romaji mismatches. Fill suggestedKana manually only when you can verify the kana reading."
+  },
+  "corrections": [
+    {
+      "lineId": "line-003",
+      "index": 2,
+      "original": "忘れない",
+      "currentKana": "わすれない",
+      "currentRomaji": "wasure nai",
+      "referenceRomaji": "wasuremasen",
+      "suggestedRomaji": "wasuremasen",
+      "suggestedKana": null,
+      "status": "reading_mismatch",
+      "reviewReasons": ["unknown_kanji_reading"],
+      "note": "Reference romaji differs from generated romaji. Review kana manually before filling suggestedKana."
+    }
+  ]
+}
+```
+
+WebUI behavior:
+
+- The WebUI loads built-in fixture JSON by default.
+- Users may load a local annotation project JSON with the browser File API.
+- Users may optionally load a local romaji correction draft JSON.
+- Loading a new annotation project clears any previous correction draft overlay.
+- Correction overlays show current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
+- The WebUI includes a CLI command helper for generating copyable PowerShell commands:
+
+```text
+singbridge annotate lyrics.txt --language ja --out song.json
+singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out romaji-report.md
+singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json
+singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json
+```
+
+The WebUI does not accept raw lyrics directly and does not run the Japanese reading adapter in the browser. Raw lyrics remain a CLI input.
+
+Visual direction:
+
+- `apps/web/Claude_DESIGN.md` is the primary visual reference: warm canvas, hairline boundaries, serif headings, and quiet reading surfaces.
+- `apps/web/Spotify_DESIGN.md` is used only for lightweight music/status cues such as active, warning, correction, and mismatch states.
+- The WebUI is a product viewer, not a landing page.
+
 ## 12. Current Known Issues And Design Risks
 
 ### Reference Romaji Is Needed For Non-Japanese Users
@@ -538,6 +613,12 @@ Diff/result: same, spacing-only difference, or reading mismatch
 ```
 
 This is more user-friendly than asking users to maintain a dictionary.
+
+### WebUI Must Stay On The CLI Boundary
+
+The browser prototype should continue to consume CLI outputs rather than run conversion directly. This keeps `kuromoji` and future tokenizer replacements isolated behind `packages/core/src/japanese/readingAdapter.ts` and avoids bundling Node-specific tokenizer code into the WebUI.
+
+If the product later needs raw-lyrics input in the WebUI, prefer a local backend or desktop shell that calls the existing CLI/core path instead of duplicating conversion logic in Vue components.
 
 ### Hard-Coded Lyric Overrides Are Temporary
 

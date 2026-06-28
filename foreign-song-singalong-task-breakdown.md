@@ -578,7 +578,74 @@ Verification:
 
 - Playwright smoke test loads fixture and displays line layers.
 
-### T7.2 Annotation Editor
+Status:
+
+- Implemented in `apps/web` as a Vue 3 + Vite read-only viewer.
+- Loads the built-in annotation and correction draft fixtures by default.
+- Displays original text, kana, romaji, Chinese pronunciation aid, difficulty notes, review reasons, and correction overlay information.
+
+### T7.2 Load Local JSON Files
+
+Goal:
+
+- Load CLI-generated local project JSON and optional correction draft JSON.
+
+Input:
+
+- `song.json` annotation project.
+- Optional `corrections.json` romaji correction draft.
+
+Output:
+
+- Read-only annotation view with optional correction overlay.
+
+Boundary:
+
+- Use browser File API only.
+- Do not upload user lyrics.
+- Do not execute CLI commands in the browser.
+- Do not import tokenizer/runtime conversion logic into WebUI.
+
+Verification:
+
+- WebUI smoke test loads fixture data and exposes file controls.
+- Unit tests validate accepted/rejected project and correction draft shapes.
+
+Status:
+
+- Implemented.
+- Loading a new annotation project clears any previous correction overlay to avoid applying stale suggestions to a different project.
+- Correction draft overlays show current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and manual review guidance.
+
+### T7.3 CLI Command Helper
+
+Goal:
+
+- Help users generate CLI commands that produce WebUI-loadable JSON files.
+
+Input:
+
+- Local path strings for lyrics, project JSON, reference romaji, reports, correction drafts, and corrected output.
+
+Output:
+
+- Copyable PowerShell-friendly CLI commands.
+
+Boundary:
+
+- Generate command text only.
+- Do not run commands from WebUI.
+- Do not add a backend.
+
+Verification:
+
+- Unit tests cover command generation, disabled states, and PowerShell quoting for paths with spaces.
+
+Status:
+
+- Implemented in the WebUI as a lightweight helper panel.
+
+### T7.4 Annotation Editor
 
 Goal:
 
@@ -596,7 +663,11 @@ Verification:
 
 - Component tests for editing and override preservation.
 
-### T7.3 Visual Direction
+Status:
+
+- Deferred. The current WebUI remains read-only.
+
+### T7.5 Visual Direction
 
 Goal:
 
@@ -613,6 +684,12 @@ Output:
 Verification:
 
 - Desktop and mobile screenshots reviewed manually.
+
+Status:
+
+- Implemented for the current read-only viewer.
+- `apps/web/Claude_DESIGN.md` is the primary style reference.
+- `apps/web/Spotify_DESIGN.md` is used only for music/status cues such as active, warning, and mismatch states.
 
 ## 10. Recommended First Implementation Slice
 
@@ -681,6 +758,21 @@ Each task is done only when:
   - Added a synthetic fixture set.
   - Tested user-provided short lyric snippets.
   - Added sample-driven reading overrides for known lyric readings.
+- Reference romaji comparison:
+  - Added a CLI flow for comparing generated romaji against user-provided reference romaji.
+  - Added Markdown comparison reports with exact match, format difference, reading mismatch, missing reference, and extra reference statuses.
+  - Enhanced mismatch report lines with current kana, generated romaji, reference romaji, review reasons, and suggested action.
+  - Added a project correction flow that applies reference romaji as `manualOverrides.romaji` without inferring kana or overwriting existing manual romaji.
+  - Added a correction draft JSON flow for actionable romaji differences; `suggestedKana` stays `null` for manual review.
+- Japanese reading dependency spike:
+  - Added `japanese-reading-technical-spike.md` to compare `kuromoji`, `lindera-wasm`, and Python/Sudachi-style options.
+- WebUI prototype:
+  - Added `apps/web` with Vue 3 + Vite.
+  - Added a read-only annotation viewer for annotation project JSON.
+  - Added local file loading for `song.json` and optional `corrections.json`.
+  - Added correction draft overlay review panels with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
+  - Added a CLI command helper that generates copyable PowerShell commands without executing them.
+  - Applied `Claude_DESIGN.md` as the primary visual system and `Spotify_DESIGN.md` only for status cues.
 
 ### Current Verification Commands
 
@@ -692,7 +784,23 @@ corepack pnpm typecheck
 corepack pnpm build
 ```
 
-Current tests cover core parsing, schema validation, kana-to-romaji, reading adapter, Chinese pronunciation aid, difficulty detection, exports, CLI success/failure paths, manual corrections, UTF-8 BOM handling, and sample validation.
+WebUI-only commands:
+
+```text
+pnpm --filter @singbridge/web test
+pnpm --filter @singbridge/web build
+pnpm --filter @singbridge/web dev -- --host 127.0.0.1 --port 5173
+```
+
+New CLI usage:
+
+```text
+singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out report.md
+singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json
+singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json
+```
+
+Current tests cover core parsing, schema validation, kana-to-romaji, reading adapter, Chinese pronunciation aid, difficulty detection, exports, CLI success/failure paths, manual corrections, UTF-8 BOM handling, reference romaji comparison, sample validation, WebUI file validation, WebUI command generation, and WebUI viewer filtering.
 
 ### Sample Findings
 
@@ -714,19 +822,16 @@ User-provided snippets exposed these important behaviors:
 - The product needs reference-romaji comparison so users can paste romaji found online and see whether generated output disagrees.
 - Romaji spacing is currently heuristic and sample-driven.
 - The current system does not infer timing from audio; all rhythm hints remain text-based.
-- WebUI has not started.
+- WebUI is implemented as a read-only prototype, not an editor.
+- WebUI does not accept raw lyrics directly; raw lyrics still go through the CLI.
 
 ### Recommended Next Slice
 
-Implement local reference-romaji comparison before WebUI:
+Stabilize the read-only WebUI before adding editing:
 
-1. Accept Japanese lyric lines plus optional reference romaji lines.
-2. Generate system romaji with the current adapter.
-3. Normalize case, punctuation, apostrophes, and spacing.
-4. Report:
-   - exact match,
-   - spacing/case-only difference,
-   - reading mismatch.
-5. Produce a Markdown comparison report.
+1. Add focused WebUI smoke automation for local JSON loading where practical.
+2. Improve correction overlay comparison readability based on user feedback.
+3. Add documentation examples for the annotation JSON and correction draft JSON shapes.
+4. Only after read-only flows are stable, consider a scoped manual correction editor.
 
-This is the best next step because the target user may not know Japanese, but can often find romaji online.
+This keeps the product aligned with CLI-first development while making the WebUI useful for reviewing CLI output.

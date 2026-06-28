@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "title": "日语跟唱标注示例",
+  "artist": "本地 MVP 示例",
+  "language": "ja",
+  "source": {
+    "type": "file_import",
+    "note": "WebUI 原型使用的静态示例",
+    "inputFile": "sample-validation-ja.txt"
+  },
+  "settings": {
+    "pronunciationMode": "zh_assist",
+    "romajiStyle": "singing_friendly"
+  },
+  "lines": [
+    {
+      "id": "line-001",
+      "index": 0,
+      "original": "きっと",
+      "reading": "きっと",
+      "kana": "きっと",
+      "romaji": "kitto",
+      "zhAssist": "ki [停半拍] to",
+      "difficultyNotes": [
+        {
+          "type": "sokuon",
+          "span": "っ",
+          "message": "小 っ 表示在下一个辅音前短暂停顿。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": false,
+      "reviewReasons": [],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "line-002",
+      "index": 1,
+      "original": "忘れない",
+      "reading": "わすれない",
+      "kana": "わすれない",
+      "romaji": "wasure nai",
+      "zhAssist": "wa su re na i",
+      "difficultyNotes": [],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "line-003",
+      "index": 2,
+      "original": "ありがとう",
+      "reading": "ありがとう",
+      "kana": "ありがとう",
+      "romaji": "arigatou",
+      "zhAssist": "a ri ga to u",
+      "difficultyNotes": [
+        {
+          "type": "long_vowel",
+          "span": "う",
+          "message": "结尾元音可以顺着节拍轻轻拉长。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": false,
+      "reviewReasons": [],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "line-004",
+      "index": 3,
+      "original": "Hold my hand",
+      "reading": "Hold my hand",
+      "romaji": "Hold my hand",
+      "zhAssist": "Hold my hand",
+      "difficultyNotes": [],
+      "needsReview": true,
+      "reviewReasons": ["non_japanese_line"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    }
+  ]
+}
