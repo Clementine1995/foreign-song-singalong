@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "type": "romaji_review_decisions",
+  "source": {
+    "projectName": "song.json",
+    "draftName": "corrections.json",
+    "exportedAt": "2026-06-28T12:00:00.000Z"
+  },
+  "decisions": [
+    {
+      "lineId": "line-001",
+      "index": 0,
+      "original": "きっと忘れない",
+      "decision": "ignored",
+      "correctionStatus": "reading_mismatch",
+      "currentRomaji": "kitto wasure nai",
+      "suggestedRomaji": "wasuremasen",
+      "suggestedKana": null,
+      "note": "Reference romaji differs from generated romaji. Review kana manually before filling suggestedKana."
+    },
+    {
+      "lineId": "line-002",
+      "index": 1,
+      "original": "ありがとう",
+      "decision": "accepted",
+      "correctionStatus": "format_difference",
+      "currentRomaji": "arigatou",
+      "suggestedRomaji": "A RI GA TO U",
+      "suggestedKana": null,
+      "note": "Only formatting differs. suggestedRomaji can usually be applied without changing kana."
+    }
+  ]
+}

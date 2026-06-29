@@ -616,6 +616,9 @@ Status:
 - Implemented.
 - Loading a new annotation project clears any previous correction overlay to avoid applying stale suggestions to a different project.
 - Correction draft overlays show current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and manual review guidance.
+- Local review decisions can now mark correction overlays as `pending`, `accepted`, or `ignored`.
+- Review decisions stay in browser-local state/localStorage and do not modify annotation JSON.
+- Review decisions can be exported as `romaji_review_decisions` JSON for a later CLI or manual workflow.
 
 ### T7.3 CLI Command Helper
 
@@ -644,6 +647,95 @@ Verification:
 Status:
 
 - Implemented in the WebUI as a lightweight helper panel.
+
+### T7.3a Review Workflow Smoke
+
+Goal:
+
+- Verify the minimum correction review loop without turning the WebUI into an editor.
+
+Input:
+
+- Annotation project JSON.
+- Correction draft JSON.
+- Local accepted/ignored decisions.
+
+Output:
+
+- Filtered correction review state.
+- Exportable `romaji_review_decisions` JSON.
+
+Boundary:
+
+- Do not edit or save the original project JSON.
+- Do not infer kana from romaji.
+- Do not apply decisions back into manual overrides in the browser.
+
+Verification:
+
+- Vitest smoke covers local JSON loading, accepted/ignored decisions, filtering, and review decision export.
+
+Status:
+
+- Implemented as `apps/web/src/reviewWorkflowSmoke.test.ts`.
+
+### T7.3b Synthetic Review Workflow Sample
+
+Goal:
+
+- Provide a small, copyright-safe end-to-end sample for the current CLI-to-WebUI review loop.
+
+Input:
+
+- `samples/review-workflow/lyrics.txt`
+- `samples/review-workflow/reference-romaji.txt`
+
+Output:
+
+- CLI-generated `song.json`, `romaji-report.md`, and `corrections.json` in a local temp directory.
+- Example exported review decisions in `samples/review-workflow/review-decisions.accept-format-only.json`.
+
+Verification:
+
+- Run the commands documented in `samples/review-workflow/README.md`.
+- CLI tests cover the synthetic sample end to end: `annotate -> compare-romaji -> draft-romaji-corrections -> apply-review-decisions -> export`.
+
+Status:
+
+- Implemented.
+- The main synthetic sample is now covered by `packages/cli/src/index.test.ts`.
+
+### T7.3c Apply Review Decisions In CLI
+
+Goal:
+
+- Consume WebUI-exported `romaji_review_decisions` JSON in the CLI.
+
+Input:
+
+- Annotation project JSON.
+- Review decisions JSON.
+
+Output:
+
+- Reviewed annotation project JSON.
+
+Boundary:
+
+- Apply only `accepted` decisions.
+- Ignore `ignored` and `pending` decisions.
+- Write only `manualOverrides.romaji`.
+- Do not infer kana from romaji.
+- Preserve existing manual romaji overrides.
+
+Verification:
+
+- Core tests cover accepted/ignored/pending behavior, preserved overrides, missing lines, and invalid decisions.
+- CLI tests cover `apply-review-decisions`, invalid decisions, and Markdown export after applying decisions.
+
+Status:
+
+- Implemented as `applyRomajiReviewDecisions` in core and `singbridge apply-review-decisions` in CLI.
 
 ### T7.4 Annotation Editor
 
@@ -771,6 +863,12 @@ Each task is done only when:
   - Added a read-only annotation viewer for annotation project JSON.
   - Added local file loading for `song.json` and optional `corrections.json`.
   - Added correction draft overlay review panels with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
+  - Added local correction review decisions: `pending`, `accepted`, and `ignored`.
+  - Added review decision export as `romaji_review_decisions` JSON without modifying the loaded annotation JSON.
+  - Added CLI application of accepted review decisions with `singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json`.
+  - Added review workflow smoke coverage for loading, marking, filtering, and exporting decisions.
+  - Added a synthetic review workflow sample under `samples/review-workflow`.
+  - Added CLI end-to-end coverage for the synthetic review sample, including correction draft shape and reviewed Markdown export.
   - Added a CLI command helper that generates copyable PowerShell commands without executing them.
   - Applied `Claude_DESIGN.md` as the primary visual system and `Spotify_DESIGN.md` only for status cues.
 
@@ -798,9 +896,11 @@ New CLI usage:
 singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out report.md
 singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json
 singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json
+singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json
 ```
 
-Current tests cover core parsing, schema validation, kana-to-romaji, reading adapter, Chinese pronunciation aid, difficulty detection, exports, CLI success/failure paths, manual corrections, UTF-8 BOM handling, reference romaji comparison, sample validation, WebUI file validation, WebUI command generation, and WebUI viewer filtering.
+Current tests cover core parsing, schema validation, kana-to-romaji, reading adapter, Chinese pronunciation aid, difficulty detection, exports, CLI success/failure paths, manual corrections, UTF-8 BOM handling, reference romaji comparison, review decision application, sample validation, WebUI file validation, WebUI command generation, and WebUI viewer filtering.
+They also cover the WebUI review workflow smoke: local JSON loading, accepted/ignored decisions, review-state filtering, and review decision export.
 
 ### Sample Findings
 
@@ -815,6 +915,16 @@ User-provided snippets exposed these important behaviors:
   - `心魅かれてく` should be treated as `こころひかれてく`.
   - `景色` was reference-romaji aligned to `ばしょ` in the tested lyric.
 - A non-Japanese user cannot reliably know whether generated kana is wrong. Manual kana editing is useful but not sufficient as the primary validation flow.
+- Short title-phrase review cases added under `samples/review-workflow/cases`:
+  - `世界が終るまでは` now generates `sekai ga owaru made wa` through the token-aware particle rule.
+  - `DAN DAN 心魅かれてく` matches the existing reference romaji path and generates no correction.
+  - `僕が死のうと思ったのは` now generates `boku ga shinou to omotta no wa` through the token-aware particle rule.
+- The two `は -> wa` title-phrase cases showed a recurring singing-romaji style issue. A conservative token-aware rule now handles kuromoji tokens where surface `は` is tagged as a particle. Lexical words such as `はな` and `はじめて` remain `ha`.
+- Pronunciation validation cases added under `samples/pronunciation-validation/cases`:
+  - `sekai-particle-wa` validates particle `は -> wa` plus ra-row / voiced-sound notes on the "直到世界尽头" title phrase.
+  - `dan-dan-ra-row` validates the "渐渐被你吸引" title phrase override and ra-row reminders.
+  - `boku-sokuon-long-vowel` validates long vowel, sokuon, `し`, and voiced-sound reminders on the "曾经我也想一了百了" title phrase.
+- Full-song local validation is supported by convention under `.local-song-validation/`, which is ignored by git. Use it for private local lyrics; do not commit full lyrics.
 
 ### Current Known Problems
 
@@ -827,11 +937,13 @@ User-provided snippets exposed these important behaviors:
 
 ### Recommended Next Slice
 
-Stabilize the read-only WebUI before adding editing:
+Validate the review-decision loop with realistic short snippets before adding editing:
 
-1. Add focused WebUI smoke automation for local JSON loading where practical.
-2. Improve correction overlay comparison readability based on user feedback.
-3. Add documentation examples for the annotation JSON and correction draft JSON shapes.
-4. Only after read-only flows are stable, consider a scoped manual correction editor.
+1. Add more short, copyright-safe snippets with known reference romaji only when they reveal new behavior.
+2. Record whether mismatches are true reading issues, particle-style romaji differences, or harmless formatting differences.
+3. Improve review copy or comparison readability only where sample evidence shows confusion.
+4. Keep the `は -> wa` rule narrow and token-aware; broaden only if future samples prove another particle style issue.
+5. Use `.local-song-validation/` for private full-song runs and summarize only findings, not full lyrics, back into committed docs/tests.
+6. Keep WebUI as a review tool until this CLI loop feels stable.
 
 This keeps the product aligned with CLI-first development while making the WebUI useful for reviewing CLI output.

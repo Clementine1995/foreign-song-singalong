@@ -10,6 +10,10 @@ describe("command builder", () => {
       enabled: true,
       command: "singbridge annotate lyrics.txt --language ja --out song.json"
     });
+    expect(commands.find((command) => command.id === "applyReview")).toMatchObject({
+      enabled: true,
+      command: "singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json"
+    });
   });
 
   it("quotes PowerShell paths with spaces and single quotes", () => {
@@ -28,5 +32,6 @@ describe("command builder", () => {
     expect(commands.find((command) => command.id === "compare")?.enabled).toBe(false);
     expect(commands.find((command) => command.id === "draft")?.enabled).toBe(false);
     expect(commands.find((command) => command.id === "apply")?.enabled).toBe(false);
+    expect(commands.find((command) => command.id === "applyReview")?.enabled).toBe(true);
   });
 });

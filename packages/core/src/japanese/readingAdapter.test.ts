@@ -40,4 +40,24 @@ describe("generateKanaReading", () => {
       romaji: "kodomo no koro taisetsu ni omotte ita basho wo omoidashita n'da"
     });
   });
+
+  it("uses wa for particle は in singing-friendly romaji", async () => {
+    await expect(generateKanaReading("世界が終るまでは")).resolves.toMatchObject({
+      kana: "せかいがおわるまでは",
+      romaji: "sekai ga owaru made wa"
+    });
+    await expect(generateKanaReading("僕が死のうと思ったのは")).resolves.toMatchObject({
+      kana: "ぼくがしのうとおもったのは",
+      romaji: "boku ga shinou to omotta no wa"
+    });
+  });
+
+  it("keeps lexical は as ha", async () => {
+    await expect(generateKanaReading("はな")).resolves.toMatchObject({
+      romaji: "hana"
+    });
+    await expect(generateKanaReading("はじめて")).resolves.toMatchObject({
+      romaji: "hajimete"
+    });
+  });
 });

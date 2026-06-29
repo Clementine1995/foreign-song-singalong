@@ -9,7 +9,13 @@ import { lastVowel } from "./kanaUnits.js";
 interface KuromojiToken {
   surface_form: string;
   reading?: string;
+  pos?: string;
   word_type?: string;
+}
+
+interface ReadingPart {
+  kana: string;
+  romajiOverride?: string;
 }
 
 export interface ReadingAdapterResult {
@@ -25,8 +31,8 @@ export async function generateKanaReading(input: string): Promise<ReadingAdapter
   const readingText = applyLyricReadingOverrides(normalized);
   const tokenizer = await getTokenizer();
   const reviewReasons = new Set<ReviewReason>();
-  const kanaParts = tokenizeReadingParts(readingText, tokenizer, reviewReasons);
-  const kana = kanaParts.join("");
+  const readingParts = tokenizeReadingParts(readingText, tokenizer, reviewReasons);
+  const kana = readingParts.map((part) => part.kana).join("");
 
   if (containsKanji(normalized)) {
     reviewReasons.add("unknown_kanji_reading");
@@ -34,7 +40,7 @@ export async function generateKanaReading(input: string): Promise<ReadingAdapter
 
   return {
     kana: toHiragana(kana),
-    romaji: normalizeRomajiSpacing(mergeKanaPartsForRomaji(kanaParts).map((part) => kanaToRomaji(toHiragana(part))).join(" ")),
+    romaji: normalizeRomajiSpacing(mergeKanaPartsForRomaji(readingParts).map(partToRomaji).join(" ")),
     reviewReasons: [...reviewReasons]
   };
 }
@@ -52,32 +58,32 @@ function tokenizeReadingParts(
   text: string,
   tokenizer: kuromoji.Tokenizer<KuromojiToken>,
   reviewReasons: Set<ReviewReason>
-): string[] {
+): ReadingPart[] {
   const segments = text.match(/\S+/g) ?? [];
-  return segments.flatMap((segment) => tokenizer.tokenize(segment).map((token) => tokenToKana(token, reviewReasons)));
+  return segments.flatMap((segment) => tokenizer.tokenize(segment).map((token) => tokenToReadingPart(token, reviewReasons)));
 }
 
-function mergeKanaPartsForRomaji(parts: string[]): string[] {
-  const merged: string[] = [];
+function mergeKanaPartsForRomaji(parts: ReadingPart[]): ReadingPart[] {
+  const merged: ReadingPart[] = [];
 
   for (let index = 0; index < parts.length; index += 1) {
     const current = parts[index];
     const next = parts[index + 1];
 
-    if (next && toHiragana(current).endsWith("っ")) {
-      merged.push(`${current}${next}`);
+    if (next && toHiragana(current.kana).endsWith("っ")) {
+      merged.push({ kana: `${current.kana}${next.kana}` });
       index += 1;
       continue;
     }
 
-    if (next && toHiragana(current) === "だ" && toHiragana(next) === "けど") {
-      merged.push(`${current}${next}`);
+    if (next && toHiragana(current.kana) === "だ" && toHiragana(next.kana) === "けど") {
+      merged.push({ kana: `${current.kana}${next.kana}` });
       index += 1;
       continue;
     }
 
-    if (next && isLongVowelContinuation(current, next)) {
-      merged.push(`${current}${next}`);
+    if (next && isLongVowelContinuation(current.kana, next.kana)) {
+      merged.push({ kana: `${current.kana}${next.kana}` });
       index += 1;
       continue;
     }
@@ -86,6 +92,10 @@ function mergeKanaPartsForRomaji(parts: string[]): string[] {
   }
 
   return merged;
+}
+
+function partToRomaji(part: ReadingPart): string {
+  return part.romajiOverride ?? kanaToRomaji(toHiragana(part.kana));
 }
 
 function isLongVowelContinuation(current: string, next: string): boolean {
@@ -123,13 +133,15 @@ function normalizeRomajiSpacing(romaji: string): string {
     .replace(/\s+([、。,.!?！？])/g, "$1");
 }
 
-function tokenToKana(token: KuromojiToken, reviewReasons: Set<ReviewReason>): string {
+function tokenToReadingPart(token: KuromojiToken, reviewReasons: Set<ReviewReason>): ReadingPart {
+  const romajiOverride = token.surface_form === "は" && token.pos === "助詞" ? "wa" : undefined;
+
   if (token.reading) {
-    return token.reading;
+    return { kana: token.reading, ...(romajiOverride ? { romajiOverride } : {}) };
   }
 
   if (isKanaOnlyJapanese(token.surface_form)) {
-    return token.surface_form;
+    return { kana: token.surface_form, ...(romajiOverride ? { romajiOverride } : {}) };
   }
 
   if (containsKanji(token.surface_form)) {
@@ -138,7 +150,7 @@ function tokenToKana(token: KuromojiToken, reviewReasons: Set<ReviewReason>): st
     reviewReasons.add("mixed_language_line");
   }
 
-  return token.surface_form;
+  return { kana: token.surface_form, ...(romajiOverride ? { romajiOverride } : {}) };
 }
 
 async function getTokenizer(): Promise<kuromoji.Tokenizer<KuromojiToken>> {

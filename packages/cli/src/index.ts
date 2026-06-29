@@ -5,11 +5,13 @@ import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import {
   assertAnnotationProject,
+  applyRomajiReviewDecisions,
   applyReferenceRomajiOverrides,
   createAnnotationProjectWithReading,
   compareReferenceRomaji,
   compareProjectReferenceRomaji,
   createRomajiCorrectionDraft,
+  parseRomajiReviewDecisionExport,
   type AnnotationProject,
   parseLyrics,
   toReferenceRomajiMarkdown,
@@ -44,12 +46,78 @@ export async function runCli(argv: string[]): Promise<CliResult> {
       return applyRomajiReference(args);
     case "draft-romaji-corrections":
       return draftRomajiCorrections(args);
+    case "apply-review-decisions":
+      return applyReviewDecisions(args);
     default:
       return {
         code: 1,
         stderr: `Error: unknown command "${command}".\nNext step: run singbridge --help.`
       };
   }
+}
+
+async function applyReviewDecisions(args: string[]): Promise<CliResult> {
+  const inputPath = args[0];
+  const decisionsPath = readOption(args, "--decisions");
+  const outPath = readOption(args, "--out");
+
+  if (!inputPath || inputPath.startsWith("--")) {
+    return {
+      code: 1,
+      stderr: "Error: project JSON file is required.\nNext step: run singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json."
+    };
+  }
+
+  if (!decisionsPath) {
+    return {
+      code: 1,
+      stderr: "Error: --decisions is required.\nNext step: provide a WebUI-exported romaji review decisions JSON file."
+    };
+  }
+
+  if (!outPath) {
+    return {
+      code: 1,
+      stderr: "Error: --out is required.\nNext step: provide an output JSON path."
+    };
+  }
+
+  const loaded = await loadProject(inputPath);
+  if (!loaded.ok) {
+    return loaded.result;
+  }
+
+  const loadedDecisions = await loadReviewDecisions(decisionsPath);
+  if (!loadedDecisions.ok) {
+    return loadedDecisions.result;
+  }
+
+  const result = applyRomajiReviewDecisions(loaded.project, loadedDecisions.review);
+  const validation = validateAnnotationProject(result.project);
+  if (!validation.valid) {
+    return {
+      code: 2,
+      stderr: `Error: reviewed project is invalid.\nCause: ${validation.issues.map((issue) => `${issue.path} ${issue.message}`).join("; ")}`
+    };
+  }
+
+  try {
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, `${JSON.stringify(result.project, null, 2)}\n`, "utf8");
+  } catch (error) {
+    return {
+      code: 3,
+      stderr: `Error: could not write output file "${outPath}".\nCause: ${formatCause(error)}\nNext step: choose a writable output path.`
+    };
+  }
+
+  return {
+    code: 0,
+    stdout: [
+      `Applied ${result.appliedCount} review decisions -> ${outPath}`,
+      `Ignored ${result.ignoredCount}, pending ${result.pendingCount}, preserved ${result.preservedCount} existing overrides, missing ${result.missingLineCount}`
+    ].join("\n")
+  };
 }
 
 async function draftRomajiCorrections(args: string[]): Promise<CliResult> {
@@ -424,6 +492,49 @@ async function loadProject(inputPath: string): Promise<
   return { ok: true, project: value };
 }
 
+async function loadReviewDecisions(decisionsPath: string): Promise<
+  | { ok: true; review: ReturnType<typeof parseRomajiReviewDecisionExport> }
+  | { ok: false; result: CliResult }
+> {
+  let raw: string;
+  try {
+    raw = await readFile(decisionsPath, "utf8");
+  } catch (error) {
+    return {
+      ok: false,
+      result: {
+        code: 1,
+        stderr: `Error: could not read review decisions file "${decisionsPath}".\nCause: ${formatCause(error)}\nNext step: check the path and try again.`
+      }
+    };
+  }
+
+  let value: unknown;
+  try {
+    value = JSON.parse(raw.replace(/^\uFEFF/, ""));
+  } catch (error) {
+    return {
+      ok: false,
+      result: {
+        code: 1,
+        stderr: `Error: review decisions file is not valid JSON.\nCause: ${formatCause(error)}\nNext step: fix the JSON syntax and export decisions again.`
+      }
+    };
+  }
+
+  try {
+    return { ok: true, review: parseRomajiReviewDecisionExport(value) };
+  } catch (error) {
+    return {
+      ok: false,
+      result: {
+        code: 1,
+        stderr: `Error: review decisions JSON is invalid.\nCause: ${formatCause(error)}`
+      }
+    };
+  }
+}
+
 function renderExport(project: AnnotationProject, format: string): string {
   if (format === "json") {
     return `${JSON.stringify(project, null, 2)}\n`;
@@ -458,6 +569,7 @@ function helpText(): string {
     "  singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out report.md",
     "  singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json",
     "  singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json",
+    "  singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json",
     "",
     "Export formats: markdown, json, text.",
     "MVP supports Japanese lyrics only. Input must be user-provided UTF-8 text."

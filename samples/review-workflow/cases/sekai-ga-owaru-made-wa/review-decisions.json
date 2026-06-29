@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "type": "romaji_review_decisions",
+  "source": {
+    "projectName": "song.json",
+    "draftName": "corrections.json",
+    "exportedAt": "2026-06-28T12:00:00.000Z"
+  },
+  "decisions": []
+}

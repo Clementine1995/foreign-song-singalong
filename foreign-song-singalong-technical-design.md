@@ -512,6 +512,7 @@ singbridge export song.json --format json --out song.json
 singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out report.md
 singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json
 singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json
+singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json
 ```
 
 The `annotate` command now uses a local `kuromoji` tokenizer and dictionary behind `packages/core/src/japanese/readingAdapter.ts`. The adapter runs offline and produces kana readings for many kanji-containing Japanese lines. Lines containing kanji still keep `needsReview: true` with `unknown_kanji_reading`, because song lyrics can use special readings that differ from dictionary readings.
@@ -582,6 +583,9 @@ WebUI behavior:
 - Users may optionally load a local romaji correction draft JSON.
 - Loading a new annotation project clears any previous correction draft overlay.
 - Correction overlays show current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
+- Users may mark correction overlays as `pending`, `accepted`, or `ignored`.
+- Review decisions are stored locally in browser `localStorage` for the current annotation/correction file pair.
+- Users may export review decisions as `romaji_review_decisions` JSON for a later CLI or manual workflow.
 - The WebUI includes a CLI command helper for generating copyable PowerShell commands:
 
 ```text
@@ -589,9 +593,40 @@ singbridge annotate lyrics.txt --language ja --out song.json
 singbridge compare-romaji lyrics.txt --reference reference-romaji.txt --out romaji-report.md
 singbridge draft-romaji-corrections song.json --reference reference-romaji.txt --out corrections.json
 singbridge apply-romaji-reference song.json --reference reference-romaji.txt --out corrected.json
+singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json
 ```
 
 The WebUI does not accept raw lyrics directly and does not run the Japanese reading adapter in the browser. Raw lyrics remain a CLI input.
+
+Review decision export behavior:
+
+- The export records only review decisions for correction overlay lines.
+- It does not modify the loaded annotation project.
+- It does not infer kana from romaji.
+- The CLI can consume exported decisions with `apply-review-decisions`.
+- The CLI applies only `accepted` decisions.
+- The CLI writes accepted `suggestedRomaji` values to `manualOverrides.romaji`.
+- The CLI does not infer kana from romaji.
+- Existing manual romaji overrides are preserved.
+
+Current synthetic review sample:
+
+- `samples/review-workflow/lyrics.txt`
+- `samples/review-workflow/reference-romaji.txt`
+- `samples/review-workflow/review-decisions.accept-format-only.json`
+
+Sample loop:
+
+```text
+lyrics.txt
+-> song.json
+-> corrections.json
+-> WebUI review decisions
+-> reviewed.json
+-> exported Markdown/text
+```
+
+The synthetic loop is covered by the CLI test suite. The test verifies the comparison summary, correction draft shape, accepted/ignored review decisions, reviewed project JSON, and exported Markdown.
 
 Visual direction:
 
@@ -631,6 +666,14 @@ The current overrides came from two real sample groups. They validate the approa
 ### Romaji Word Spacing Is Heuristic
 
 `kuromoji` tokenization gives useful word boundaries, but song-style romaji spacing does not always match token boundaries. The current implementation includes small normalization rules such as `hikare te ku -> hikareteku`, `ba sho -> basho`, and `n da -> n'da`. This should remain conservative and sample-driven.
+
+### Particle Romaji Is Token-Aware
+
+The reading adapter uses a conservative token-aware rule for surface `は` tagged as a particle by `kuromoji`.
+
+- The particle is rendered as singing-friendly `wa` in romaji while kana remains `は`.
+- Lexical words such as `はな` and `はじめて` still render with `ha`.
+- This rule lives in `readingAdapter.ts`, not the generic `kanaToRomaji("は")` conversion, so the WebUI still does not run tokenizer code.
 
 ### Non-Japanese Lines Are Preserved
 

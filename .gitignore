@@ -4,3 +4,5 @@ packages/*/dist/
 coverage/
 *.log
 smoke-output.json
+.tmp/
+.local-song-validation/

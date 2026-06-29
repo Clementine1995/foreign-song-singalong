@@ -5,10 +5,12 @@ export interface CliCommandInputs {
   reportPath: string;
   correctionsPath: string;
   correctedPath: string;
+  decisionsPath: string;
+  reviewedPath: string;
 }
 
 export interface CliCommand {
-  id: "annotate" | "compare" | "draft" | "apply";
+  id: "annotate" | "compare" | "draft" | "apply" | "applyReview";
   title: string;
   description: string;
   command: string;
@@ -22,7 +24,9 @@ export function defaultCliCommandInputs(): CliCommandInputs {
     referencePath: "reference-romaji.txt",
     reportPath: "romaji-report.md",
     correctionsPath: "corrections.json",
-    correctedPath: "corrected.json"
+    correctedPath: "corrected.json",
+    decisionsPath: "romaji-review-decisions.json",
+    reviewedPath: "reviewed.json"
   };
 }
 
@@ -86,6 +90,20 @@ export function buildCliCommands(inputs: CliCommandInputs): CliCommand[] {
         quotePowerShellArg(inputs.correctedPath)
       ].join(" "),
       enabled: hasProject && hasReference && inputs.correctedPath.trim().length > 0
+    },
+    {
+      id: "applyReview",
+      title: "应用复核决定",
+      description: "只应用已接受的 WebUI 复核决定，输出 reviewed.json。",
+      command: [
+        "singbridge apply-review-decisions",
+        quotePowerShellArg(inputs.projectPath),
+        "--decisions",
+        quotePowerShellArg(inputs.decisionsPath),
+        "--out",
+        quotePowerShellArg(inputs.reviewedPath)
+      ].join(" "),
+      enabled: hasProject && inputs.decisionsPath.trim().length > 0 && inputs.reviewedPath.trim().length > 0
     }
   ];
 }

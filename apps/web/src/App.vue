@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import type { LoadedFixtures, ViewerTab } from "./types";
-import { createViewerLines, filterViewerLines } from "./viewModel";
+import { computed, onMounted, ref, watch } from "vue";
+import type { LoadedFixtures, ReviewDecision, ReviewDecisionMap, ViewerTab } from "./types";
+import { buildReviewDecisionExport, createViewerLines, filterViewerLines } from "./viewModel";
 import { buildCliCommands, defaultCliCommandInputs, type CliCommand } from "./commandBuilder";
 import {
   parseCorrectionDraft,
@@ -12,7 +12,10 @@ import { loadAnnotationProjectValue, loadCorrectionDraftValue } from "./localJso
 const tabs: { id: ViewerTab; label: string }[] = [
   { id: "all", label: "全部" },
   { id: "review", label: "需复核" },
-  { id: "corrections", label: "修正建议" }
+  { id: "corrections", label: "修正建议" },
+  { id: "pending", label: "待处理" },
+  { id: "accepted", label: "已接受" },
+  { id: "ignored", label: "已忽略" }
 ];
 
 const activeTab = ref<ViewerTab>("all");
@@ -22,12 +25,13 @@ const projectInput = ref<HTMLInputElement | null>(null);
 const draftInput = ref<HTMLInputElement | null>(null);
 const cliInputs = ref(defaultCliCommandInputs());
 const copiedCommandId = ref<string | null>(null);
+const reviewDecisions = ref<ReviewDecisionMap>({});
 
 const viewerLines = computed(() => {
   if (!fixtures.value) {
     return [];
   }
-  return createViewerLines(fixtures.value.project.lines, fixtures.value.draft);
+  return createViewerLines(fixtures.value.project.lines, fixtures.value.draft, reviewDecisions.value);
 });
 
 const visibleLines = computed(() => filterViewerLines(viewerLines.value, activeTab.value));
@@ -39,8 +43,19 @@ const summary = computed(() => {
   return {
     total: all.length,
     review: all.filter((item) => item.line.needsReview || item.line.reviewReasons.length > 0).length,
-    corrections: all.filter((item) => item.overlay).length
+    corrections: all.filter((item) => item.overlay).length,
+    pending: all.filter((item) => item.overlay && item.reviewDecision === "pending").length,
+    accepted: all.filter((item) => item.overlay && item.reviewDecision === "accepted").length,
+    ignored: all.filter((item) => item.overlay && item.reviewDecision === "ignored").length
   };
+});
+
+const reviewStorageKey = computed(() => {
+  if (!fixtures.value) {
+    return null;
+  }
+
+  return `singbridge-review:${fixtures.value.projectName}:${fixtures.value.draftName ?? "no-draft"}`;
 });
 
 function statusLabel(status: string): string {
@@ -73,6 +88,92 @@ function correctionGuidance(status: string): string {
   return status === "reading_mismatch"
     ? "读音可能不同。先人工确认 kana，再决定是否只采用 romaji。"
     : "只是空格或格式不同。通常可以直接采用建议 romaji。";
+}
+
+function reviewDecisionLabel(decision: ReviewDecision): string {
+  switch (decision) {
+    case "accepted":
+      return "已接受";
+    case "ignored":
+      return "已忽略";
+    case "pending":
+      return "待处理";
+  }
+}
+
+function setReviewDecision(lineId: string, decision: ReviewDecision): void {
+  if (decision === "pending") {
+    const next = { ...reviewDecisions.value };
+    delete next[lineId];
+    reviewDecisions.value = next;
+    return;
+  }
+
+  reviewDecisions.value = {
+    ...reviewDecisions.value,
+    [lineId]: decision
+  };
+}
+
+function loadReviewDecisions(): void {
+  const key = reviewStorageKey.value;
+  if (!key) {
+    reviewDecisions.value = {};
+    return;
+  }
+
+  const saved = window.localStorage.getItem(key);
+  if (!saved) {
+    reviewDecisions.value = {};
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+    reviewDecisions.value = sanitizeReviewDecisions(parsed);
+  } catch {
+    reviewDecisions.value = {};
+  }
+}
+
+function saveReviewDecisions(decisions: ReviewDecisionMap): void {
+  const key = reviewStorageKey.value;
+  if (!key) {
+    return;
+  }
+
+  window.localStorage.setItem(key, JSON.stringify(decisions));
+}
+
+function sanitizeReviewDecisions(value: unknown): ReviewDecisionMap {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, "accepted" | "ignored"] => {
+      return entry[1] === "accepted" || entry[1] === "ignored";
+    })
+  );
+}
+
+function exportReviewDecisions(): void {
+  if (!fixtures.value) {
+    return;
+  }
+
+  const payload = buildReviewDecisionExport(viewerLines.value, {
+    projectName: fixtures.value.projectName,
+    ...(fixtures.value.draftName ? { draftName: fixtures.value.draftName } : {}),
+    exportedAt: new Date().toISOString()
+  });
+  const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "romaji-review-decisions.json";
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 async function loadDefaultFixtures(): Promise<void> {
@@ -169,6 +270,9 @@ async function copyCommand(command: CliCommand): Promise<void> {
   }
 }
 
+watch(reviewStorageKey, loadReviewDecisions);
+watch(reviewDecisions, saveReviewDecisions, { deep: true });
+
 onMounted(loadDefaultFixtures);
 </script>
 
@@ -180,7 +284,8 @@ onMounted(loadDefaultFixtures);
         <h1>{{ fixtures?.project.title ?? "日语歌词标注查看器" }}</h1>
         <p class="subtitle">
           {{ fixtures?.project.artist ?? "静态示例" }} · 共 {{ summary.total }} 行 ·
-          {{ summary.review }} 行需复核 · {{ summary.corrections }} 条修正建议
+          {{ summary.review }} 行需复核 · {{ summary.corrections }} 条修正建议 ·
+          {{ summary.pending }} 待处理 / {{ summary.accepted }} 已接受 / {{ summary.ignored }} 已忽略
         </p>
       </div>
       <div class="topbar-actions">
@@ -199,6 +304,9 @@ onMounted(loadDefaultFixtures);
         <div class="file-actions">
           <button class="file-button" type="button" @click="projectInput?.click()">选择标注 JSON</button>
           <button class="file-button" type="button" @click="draftInput?.click()">加载修正建议 JSON</button>
+          <button class="file-button" type="button" :disabled="summary.corrections === 0" @click="exportReviewDecisions">
+            导出复核决定 JSON
+          </button>
           <input ref="projectInput" class="file-input" type="file" accept="application/json,.json" @change="handleProjectFile" />
           <input ref="draftInput" class="file-input" type="file" accept="application/json,.json" @change="handleDraftFile" />
         </div>
@@ -210,6 +318,7 @@ onMounted(loadDefaultFixtures);
     <section v-else class="source-strip">
       <span>标注文件：{{ fixtures.projectName }}</span>
       <span>修正建议：{{ fixtures.draftName ?? "未加载" }}</span>
+      <span>复核决定保存在此浏览器，不会改写原 JSON。</span>
     </section>
 
     <section class="cli-helper" aria-labelledby="cli-helper-title">
@@ -246,6 +355,14 @@ onMounted(loadDefaultFixtures);
           <span>应用后输出</span>
           <input v-model="cliInputs.correctedPath" type="text" placeholder="corrected.json" />
         </label>
+        <label>
+          <span>复核决定 JSON</span>
+          <input v-model="cliInputs.decisionsPath" type="text" placeholder="romaji-review-decisions.json" />
+        </label>
+        <label>
+          <span>复核后输出</span>
+          <input v-model="cliInputs.reviewedPath" type="text" placeholder="reviewed.json" />
+        </label>
       </div>
 
       <div class="command-list">
@@ -273,7 +390,9 @@ onMounted(loadDefaultFixtures);
           review: item.line.needsReview,
           correction: item.overlay,
           mismatch: item.overlay?.status === 'reading_mismatch',
-          format: item.overlay?.status === 'format_difference'
+          format: item.overlay?.status === 'format_difference',
+          accepted: item.reviewDecision === 'accepted',
+          ignored: item.reviewDecision === 'ignored'
         }"
       >
         <div class="line-index">{{ item.line.index + 1 }}</div>
@@ -321,7 +440,10 @@ onMounted(loadDefaultFixtures);
           <aside v-if="item.overlay" class="overlay-panel">
             <div class="overlay-summary">
               <span>修正类型</span>
-              <strong>{{ statusLabel(item.overlay.status) }}</strong>
+              <div class="overlay-summary-row">
+                <strong>{{ statusLabel(item.overlay.status) }}</strong>
+                <em>{{ reviewDecisionLabel(item.reviewDecision) }}</em>
+              </div>
               <p>{{ correctionGuidance(item.overlay.status) }}</p>
             </div>
             <div class="overlay-comparison">
@@ -355,6 +477,25 @@ onMounted(loadDefaultFixtures);
               <p v-else>无额外复核原因。</p>
             </div>
             <p class="overlay-note">{{ item.overlay.note }}</p>
+            <div class="review-actions" aria-label="复核决定">
+              <button
+                type="button"
+                :class="{ active: item.reviewDecision === 'accepted' }"
+                @click="setReviewDecision(item.line.id, 'accepted')"
+              >
+                接受建议
+              </button>
+              <button
+                type="button"
+                :class="{ active: item.reviewDecision === 'ignored' }"
+                @click="setReviewDecision(item.line.id, 'ignored')"
+              >
+                忽略建议
+              </button>
+              <button type="button" @click="setReviewDecision(item.line.id, 'pending')">
+                重置待处理
+              </button>
+            </div>
           </aside>
         </div>
       </article>
