@@ -489,6 +489,31 @@ li + li {
   font-size: 1rem;
 }
 
+.guidance-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.guidance-row b {
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  padding: 3px 8px;
+  color: #17643a;
+  background: rgba(30, 215, 96, 0.12);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.guidance-row p {
+  min-width: 0;
+}
+
+.guidance-needs_manual_review .guidance-row b {
+  color: #8b2935;
+  background: rgba(243, 114, 127, 0.12);
+}
+
 .overlay-summary-row {
   display: flex;
   align-items: center;

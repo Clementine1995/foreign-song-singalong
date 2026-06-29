@@ -920,6 +920,7 @@ User-provided snippets exposed these important behaviors:
   - `DAN DAN 心魅かれてく` matches the existing reference romaji path and generates no correction.
   - `僕が死のうと思ったのは` now generates `boku ga shinou to omotta no wa` through the token-aware particle rule.
 - The two `は -> wa` title-phrase cases showed a recurring singing-romaji style issue. A conservative token-aware rule now handles kuromoji tokens where surface `は` is tagged as a particle. Lexical words such as `はな` and `はじめて` remain `ha`.
+- `samples/review-workflow/README.md` now tracks mismatch categories for the review loop: harmless formatting differences, likely reading issues, particle-style romaji differences, and lyric-specific special readings. Keep this as evidence before adding more UI filters or correction categories.
 - Pronunciation validation cases added under `samples/pronunciation-validation/cases`:
   - `sekai-particle-wa` validates particle `は -> wa` plus ra-row / voiced-sound notes on the "直到世界尽头" title phrase.
   - `dan-dan-ra-row` validates the "渐渐被你吸引" title phrase override and ra-row reminders.

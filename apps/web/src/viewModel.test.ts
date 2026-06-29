@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildReviewDecisionExport, createViewerLines, filterViewerLines } from "./viewModel";
+import { buildReviewDecisionExport, buildReviewGuidance, createViewerLines, filterViewerLines } from "./viewModel";
 import projectFixture from "../public/fixtures/annotation-ja.json";
 import draftFixture from "../public/fixtures/correction-draft.json";
 import type { AnnotationProject, RomajiCorrectionDraft } from "./types";
@@ -19,7 +19,25 @@ describe("viewer model", () => {
       status: "reading_mismatch",
       suggestedRomaji: "wasuremasen",
       suggestedKana: null,
-      reviewReasons: ["unknown_kanji_reading"]
+      reviewReasons: ["unknown_kanji_reading"],
+      guidance: {
+        level: "needs_manual_review",
+        label: "需人工确认",
+        action: "建议保持待处理或忽略；确认 kana 后再接受。"
+      }
+    });
+  });
+
+  it("classifies review guidance by correction risk", () => {
+    expect(buildReviewGuidance("format_difference", [])).toMatchObject({
+      level: "low",
+      label: "低风险",
+      action: "通常可以接受建议 romaji。"
+    });
+    expect(buildReviewGuidance("reading_mismatch", ["unknown_kanji_reading"])).toMatchObject({
+      level: "needs_manual_review",
+      label: "需人工确认",
+      title: "可能是汉字读音差异"
     });
   });
 

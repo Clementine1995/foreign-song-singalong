@@ -84,12 +84,6 @@ function reviewReasonLabel(reason: string): string {
   }
 }
 
-function correctionGuidance(status: string): string {
-  return status === "reading_mismatch"
-    ? "读音可能不同。先人工确认 kana，再决定是否只采用 romaji。"
-    : "只是空格或格式不同。通常可以直接采用建议 romaji。";
-}
-
 function reviewDecisionLabel(decision: ReviewDecision): string {
   switch (decision) {
     case "accepted":
@@ -438,13 +432,17 @@ onMounted(loadDefaultFixtures);
           </div>
 
           <aside v-if="item.overlay" class="overlay-panel">
-            <div class="overlay-summary">
+            <div class="overlay-summary" :class="`guidance-${item.overlay.guidance.level}`">
               <span>修正类型</span>
               <div class="overlay-summary-row">
-                <strong>{{ statusLabel(item.overlay.status) }}</strong>
+                <strong>{{ item.overlay.guidance.title }}</strong>
                 <em>{{ reviewDecisionLabel(item.reviewDecision) }}</em>
               </div>
-              <p>{{ correctionGuidance(item.overlay.status) }}</p>
+              <div class="guidance-row">
+                <b>{{ item.overlay.guidance.label }}</b>
+                <p>{{ item.overlay.guidance.action }}</p>
+              </div>
+              <p>{{ item.overlay.guidance.detail }}</p>
             </div>
             <div class="overlay-comparison">
               <div>

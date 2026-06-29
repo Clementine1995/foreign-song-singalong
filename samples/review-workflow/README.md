@@ -66,3 +66,16 @@ The `cases/` directory keeps each example intentionally short and copyright-safe
 | `boku-ga-shinou-to-omotta-no-wa` | 曾经我也想一了百了 | Final `は` is generated as singing-style `wa`; no correction is generated. |
 
 These cases are covered by the CLI test suite. They currently validate the review-decision loop rather than proving a tokenizer replacement is needed.
+
+## Mismatch Classification Notes
+
+Use this table to keep review-loop evidence small and actionable. Add rows only when a short snippet reveals a new behavior; keep private full-song findings in `.local-song-validation/` and summarize them without committing full lyrics.
+
+| Category | Current evidence | Review action | Product implication |
+| --- | --- | --- | --- |
+| Harmless formatting difference | `ありがとう` vs `A RI GA TO U` in the synthetic sample | Accept when the style is preferred | WebUI can label this as low-risk because normalized romaji matches. |
+| True or likely reading issue | `きっと忘れない` vs `wasuremasen` in the synthetic sample | Keep pending or ignore until kana is manually confirmed | Accepting romaji alone must not imply kana is fixed. |
+| Particle-style romaji difference | `世界が終るまでは` and `僕が死のうと思ったのは` title phrases | No correction expected after the token-aware `は -> wa` rule | Keep this rule narrow and token-aware; do not change generic `kanaToRomaji("は")`. |
+| Lyric-specific special reading | `DAN DAN 心魅かれてく` title phrase | Prefer reference-romaji evidence over growing hard-coded overrides | Use short samples to decide whether a reading override is temporary or should remain external correction data. |
+
+Current UI guidance mirrors only the first two categories: format-only corrections are low-risk, while reading mismatches require manual review. Broaden UI categories only after more short samples show a stable pattern.

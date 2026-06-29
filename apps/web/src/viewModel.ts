@@ -3,6 +3,16 @@ import type { ReviewDecision, ReviewDecisionMap, RomajiCorrectionDraft, ViewerTa
 
 export type OverlayStatus = "format_difference" | "reading_mismatch";
 
+export type ReviewGuidanceLevel = "low" | "needs_manual_review";
+
+export interface ReviewGuidance {
+  level: ReviewGuidanceLevel;
+  label: string;
+  title: string;
+  action: string;
+  detail: string;
+}
+
 export interface CorrectionOverlay {
   lineId: string;
   currentKana?: string;
@@ -13,6 +23,7 @@ export interface CorrectionOverlay {
   status: OverlayStatus;
   reviewReasons: string[];
   note: string;
+  guidance: ReviewGuidance;
 }
 
 export interface ViewerLine {
@@ -56,9 +67,33 @@ export function buildOverlayMap(draft: RomajiCorrectionDraft): Map<string, Corre
       suggestedKana: correction.suggestedKana,
       status: correction.status,
       reviewReasons: correction.reviewReasons,
-      note: correction.note
+      note: correction.note,
+      guidance: buildReviewGuidance(correction.status, correction.reviewReasons)
     }
   ]));
+}
+
+export function buildReviewGuidance(status: OverlayStatus, reviewReasons: string[]): ReviewGuidance {
+  if (status === "format_difference") {
+    return {
+      level: "low",
+      label: "低风险",
+      title: "格式差异",
+      action: "通常可以接受建议 romaji。",
+      detail: "系统判断读音归一化后一致，差异主要来自大小写、空格或标点风格。"
+    };
+  }
+
+  const hasUnknownReading = reviewReasons.includes("unknown_kanji_reading");
+  return {
+    level: "needs_manual_review",
+    label: "需人工确认",
+    title: hasUnknownReading ? "可能是汉字读音差异" : "读音不一致",
+    action: "建议保持待处理或忽略；确认 kana 后再接受。",
+    detail: hasUnknownReading
+      ? "这一行包含需要复核的汉字读音。只接受 romaji 不会修正 kana。"
+      : "参考 romaji 和当前生成结果读音不同。接受前请确认这不是错误读法。"
+  };
 }
 
 export function createViewerLines(

@@ -10,6 +10,7 @@ This WebUI is intentionally small:
 - Loads local annotation project JSON files such as `song.json`.
 - Optionally loads local romaji correction draft JSON files such as `corrections.json`.
 - Shows correction overlays with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and manual review guidance.
+- Classifies each correction as low-risk formatting or manual-review reading mismatch in the UI without changing the JSON schemas.
 - Tracks local correction review decisions as `pending`, `accepted`, or `ignored`.
 - Exports review decisions JSON for a later CLI or manual workflow.
 - Generates copyable CLI commands for the existing CLI workflow.
