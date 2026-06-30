@@ -64,6 +64,8 @@ The `cases/` directory keeps each example intentionally short and copyright-safe
 | `sekai-ga-owaru-made-wa` | 直到世界尽头 | Final `は` is generated as singing-style `wa`; no correction is generated. |
 | `dan-dan-kokoro-hikareteku` | 渐渐被你吸引 | Existing reading override matches the reference romaji; no correction is generated. |
 | `boku-ga-shinou-to-omotta-no-wa` | 曾经我也想一了百了 | Final `は` is generated as singing-style `wa`; no correction is generated. |
+| `guidance-risk-categories` | Synthetic review guidance sample | Produces one format-only correction and one reading mismatch so UI guidance can be checked without kanji ambiguity. |
+| `gurenge-reading-mismatch` | 红莲华 | Produces a real short-title `reading_mismatch` with `unknown_kanji_reading`; the sample keeps it in manual review. |
 
 These cases are covered by the CLI test suite. They currently validate the review-decision loop rather than proving a tokenizer replacement is needed.
 
@@ -73,9 +75,9 @@ Use this table to keep review-loop evidence small and actionable. Add rows only 
 
 | Category | Current evidence | Review action | Product implication |
 | --- | --- | --- | --- |
-| Harmless formatting difference | `ありがとう` vs `A RI GA TO U` in the synthetic sample | Accept when the style is preferred | WebUI can label this as low-risk because normalized romaji matches. |
-| True or likely reading issue | `きっと忘れない` vs `wasuremasen` in the synthetic sample | Keep pending or ignore until kana is manually confirmed | Accepting romaji alone must not imply kana is fixed. |
+| Harmless formatting difference | `ありがとう` vs `A RI GA TO U`; `さよなら` vs `SA YO NA RA` | Accept when the style is preferred | WebUI can label this as low-risk because normalized romaji matches. |
+| True or likely reading issue | `きっと忘れない` vs `wasuremasen`; `またね` vs `matte`; `紅蓮華` vs `gurenge` | Keep pending or ignore until kana is manually confirmed | Accepting romaji alone must not imply kana is fixed. |
 | Particle-style romaji difference | `世界が終るまでは` and `僕が死のうと思ったのは` title phrases | No correction expected after the token-aware `は -> wa` rule | Keep this rule narrow and token-aware; do not change generic `kanaToRomaji("は")`. |
 | Lyric-specific special reading | `DAN DAN 心魅かれてく` title phrase | Prefer reference-romaji evidence over growing hard-coded overrides | Use short samples to decide whether a reading override is temporary or should remain external correction data. |
 
-Current UI guidance mirrors only the first two categories: format-only corrections are low-risk, while reading mismatches require manual review. Broaden UI categories only after more short samples show a stable pattern.
+Current UI guidance mirrors only the first two categories: format-only corrections are low-risk, while reading mismatches require manual review. The synthetic guidance case checks the mechanism; short title-phrase cases keep the risk tied to real reading behavior without committing full lyrics. Broaden UI categories only after more short samples show a stable pattern.

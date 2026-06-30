@@ -919,6 +919,8 @@ User-provided snippets exposed these important behaviors:
   - `世界が終るまでは` now generates `sekai ga owaru made wa` through the token-aware particle rule.
   - `DAN DAN 心魅かれてく` matches the existing reference romaji path and generates no correction.
   - `僕が死のうと思ったのは` now generates `boku ga shinou to omotta no wa` through the token-aware particle rule.
+  - `guidance-risk-categories` adds a synthetic format-difference plus reading-mismatch pair for checking WebUI guidance without kanji ambiguity.
+  - `gurenge-reading-mismatch` adds a short title-phrase kanji mismatch where `紅蓮華` currently drafts a manual-review correction against `gurenge` with `suggestedKana: null`.
 - The two `は -> wa` title-phrase cases showed a recurring singing-romaji style issue. A conservative token-aware rule now handles kuromoji tokens where surface `は` is tagged as a particle. Lexical words such as `はな` and `はじめて` remain `ha`.
 - `samples/review-workflow/README.md` now tracks mismatch categories for the review loop: harmless formatting differences, likely reading issues, particle-style romaji differences, and lyric-specific special readings. Keep this as evidence before adding more UI filters or correction categories.
 - Pronunciation validation cases added under `samples/pronunciation-validation/cases`:

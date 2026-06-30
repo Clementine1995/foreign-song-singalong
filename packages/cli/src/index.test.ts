@@ -474,7 +474,9 @@ describe("runCli", () => {
   it.each([
     ["sekai-ga-owaru-made-wa", 0, "Romaji：sekai ga owaru made wa"],
     ["dan-dan-kokoro-hikareteku", 0, "Romaji：DAN DAN kokoro hikareteku"],
-    ["boku-ga-shinou-to-omotta-no-wa", 0, "Romaji：boku ga shinou to omotta no wa"]
+    ["boku-ga-shinou-to-omotta-no-wa", 0, "Romaji：boku ga shinou to omotta no wa"],
+    ["guidance-risk-categories", 2, "Romaji：SA YO NA RA"],
+    ["gurenge-reading-mismatch", 1, "Romaji：guren hana"]
   ])("runs the review workflow sample case %s", async (caseName, expectedCorrections, expectedMarkdown) => {
     const dir = await mkdtemp(join(tmpdir(), "singbridge-"));
     const sampleDir = join(repoRoot(), "samples", "review-workflow", "cases", caseName);
@@ -511,6 +513,109 @@ describe("runCli", () => {
     expect(applyResult.code).toBe(0);
     expect(exportResult.code).toBe(0);
     expect(await readFile(markdownPath, "utf8")).toContain(expectedMarkdown);
+  });
+
+  it("keeps guidance risk category decisions scoped to romaji overrides", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "singbridge-"));
+    const sampleDir = join(repoRoot(), "samples", "review-workflow", "cases", "guidance-risk-categories");
+    const lyricsPath = join(sampleDir, "lyrics.txt");
+    const referencePath = join(sampleDir, "reference-romaji.txt");
+    const decisionsPath = join(sampleDir, "review-decisions.json");
+    const projectPath = join(dir, "song.json");
+    const correctionsPath = join(dir, "corrections.json");
+    const reviewedPath = join(dir, "reviewed.json");
+
+    const annotateResult = await runCli(["annotate", lyricsPath, "--language", "ja", "--out", projectPath]);
+    const draftResult = await runCli([
+      "draft-romaji-corrections",
+      projectPath,
+      "--reference",
+      referencePath,
+      "--out",
+      correctionsPath
+    ]);
+    const applyResult = await runCli([
+      "apply-review-decisions",
+      projectPath,
+      "--decisions",
+      decisionsPath,
+      "--out",
+      reviewedPath
+    ]);
+
+    expect(annotateResult.code).toBe(0);
+    expect(draftResult.code).toBe(0);
+    expect(applyResult.code).toBe(0);
+
+    const draft = JSON.parse(await readFile(correctionsPath, "utf8"));
+    expect(draft.corrections).toEqual([
+      expect.objectContaining({
+        lineId: "line-001",
+        status: "format_difference",
+        suggestedRomaji: "SA YO NA RA",
+        suggestedKana: null
+      }),
+      expect.objectContaining({
+        lineId: "line-002",
+        status: "reading_mismatch",
+        suggestedRomaji: "matte",
+        suggestedKana: null
+      })
+    ]);
+
+    const reviewed = JSON.parse(await readFile(reviewedPath, "utf8"));
+    expect(reviewed.lines[0].manualOverrides.romaji).toBe("SA YO NA RA");
+    expect(reviewed.lines[0].manualOverrides.kana).toBeNull();
+    expect(reviewed.lines[1].manualOverrides.romaji).toBeNull();
+    expect(reviewed.lines[1].manualOverrides.kana).toBeNull();
+  });
+
+  it("keeps real kanji reading mismatches in manual review", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "singbridge-"));
+    const sampleDir = join(repoRoot(), "samples", "review-workflow", "cases", "gurenge-reading-mismatch");
+    const lyricsPath = join(sampleDir, "lyrics.txt");
+    const referencePath = join(sampleDir, "reference-romaji.txt");
+    const decisionsPath = join(sampleDir, "review-decisions.json");
+    const projectPath = join(dir, "song.json");
+    const correctionsPath = join(dir, "corrections.json");
+    const reviewedPath = join(dir, "reviewed.json");
+
+    const annotateResult = await runCli(["annotate", lyricsPath, "--language", "ja", "--out", projectPath]);
+    const draftResult = await runCli([
+      "draft-romaji-corrections",
+      projectPath,
+      "--reference",
+      referencePath,
+      "--out",
+      correctionsPath
+    ]);
+    const applyResult = await runCli([
+      "apply-review-decisions",
+      projectPath,
+      "--decisions",
+      decisionsPath,
+      "--out",
+      reviewedPath
+    ]);
+
+    expect(annotateResult.code).toBe(0);
+    expect(draftResult.code).toBe(0);
+    expect(applyResult.code).toBe(0);
+
+    const draft = JSON.parse(await readFile(correctionsPath, "utf8"));
+    expect(draft.corrections).toEqual([
+      expect.objectContaining({
+        lineId: "line-001",
+        status: "reading_mismatch",
+        reviewReasons: ["unknown_kanji_reading"],
+        suggestedRomaji: "gurenge",
+        suggestedKana: null
+      })
+    ]);
+
+    const reviewed = JSON.parse(await readFile(reviewedPath, "utf8"));
+    expect(reviewed.lines[0].manualOverrides.romaji).toBeNull();
+    expect(reviewed.lines[0].manualOverrides.kana).toBeNull();
   });
 });
 

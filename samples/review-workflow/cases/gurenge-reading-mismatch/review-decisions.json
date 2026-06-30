@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "type": "romaji_review_decisions",
+  "source": {
+    "projectName": "song.json",
+    "draftName": "corrections.json",
+    "exportedAt": "2026-06-29T12:00:00.000Z"
+  },
+  "decisions": [
+    {
+      "lineId": "line-001",
+      "index": 0,
+      "original": "紅蓮華",
+      "decision": "ignored",
+      "correctionStatus": "reading_mismatch",
+      "currentRomaji": "guren hana",
+      "suggestedRomaji": "gurenge",
+      "suggestedKana": null,
+      "note": "Reference romaji differs from generated romaji. Review kana manually before filling suggestedKana."
+    }
+  ]
+}
