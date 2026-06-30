@@ -759,15 +759,17 @@ Boundary:
 - Do not edit kana, generated fields, or difficulty notes yet.
 - Do not infer kana from romaji.
 - Do not overwrite the original loaded file; export a new JSON download.
+- Store editor drafts in browser `localStorage` by annotation project name.
 
 Verification:
 
-- Unit tests cover text override input mapping, export shape, clearing values to `null`, and preservation of generated fields.
+- Unit tests cover text override input mapping, saved draft sanitization, export shape, clearing values to `null`, and preservation of generated fields.
 - WebUI typecheck, test, and build pass.
 
 Status:
 
 - First slice implemented as a local text-override editor for romaji and Chinese pronunciation aid.
+- Editor drafts are restored from browser-local storage for the current annotation project.
 
 ### T7.5 Visual Direction
 

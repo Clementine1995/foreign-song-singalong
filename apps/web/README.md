@@ -87,7 +87,7 @@ Loading a new annotation project clears the previous correction overlay so stale
 
 Review decisions are stored in browser `localStorage` for the current annotation/correction file pair. They do not modify the loaded annotation JSON.
 
-Manual override edits stay in browser state until exported. Exporting updated annotation JSON preserves generated `romaji` and `zhAssist` values and writes only `manualOverrides.romaji` and `manualOverrides.zhAssist`.
+Manual override drafts are stored in browser `localStorage` for the current annotation project name. Exporting updated annotation JSON preserves generated `romaji` and `zhAssist` values and writes only `manualOverrides.romaji` and `manualOverrides.zhAssist`.
 
 Exported review decision JSON uses this shape:
 

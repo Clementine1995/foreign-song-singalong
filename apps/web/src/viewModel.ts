@@ -152,6 +152,29 @@ function textOverrideOrNull(value: string): string | null {
   return value.trim() === "" ? null : value.trim();
 }
 
+export function sanitizeManualOverrideInputs(value: unknown, base: ManualOverrideInputMaps): ManualOverrideInputMaps {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return base;
+  }
+
+  const candidate = value as Partial<Record<keyof ManualOverrideInputMaps, unknown>>;
+  return {
+    romaji: sanitizeTextOverrideInputMap(candidate.romaji, base.romaji),
+    zhAssist: sanitizeTextOverrideInputMap(candidate.zhAssist, base.zhAssist)
+  };
+}
+
+function sanitizeTextOverrideInputMap(value: unknown, base: TextOverrideInputMap): TextOverrideInputMap {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return base;
+  }
+
+  return Object.fromEntries(Object.keys(base).map((lineId) => {
+    const saved = (value as Record<string, unknown>)[lineId];
+    return [lineId, typeof saved === "string" ? saved : base[lineId]];
+  }));
+}
+
 export function filterViewerLines(lines: ViewerLine[], tab: ViewerTab): ViewerLine[] {
   if (tab === "review") {
     return lines.filter((item) => item.line.needsReview || item.line.reviewReasons.length > 0);

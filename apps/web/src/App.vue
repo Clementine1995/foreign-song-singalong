@@ -7,6 +7,7 @@ import {
   buildManualOverrideInputs,
   createViewerLines,
   filterViewerLines,
+  sanitizeManualOverrideInputs,
   type ManualOverrideInputMaps
 } from "./viewModel";
 import { buildCliCommands, defaultCliCommandInputs, type CliCommand } from "./commandBuilder";
@@ -81,6 +82,14 @@ const reviewStorageKey = computed(() => {
   return `singbridge-review:${fixtures.value.projectName}:${fixtures.value.draftName ?? "no-draft"}`;
 });
 
+const editorStorageKey = computed(() => {
+  if (!fixtures.value) {
+    return null;
+  }
+
+  return `singbridge-editor:${fixtures.value.projectName}`;
+});
+
 function statusLabel(status: string): string {
   switch (status) {
     case "reading_mismatch":
@@ -134,6 +143,36 @@ function setReviewDecision(lineId: string, decision: ReviewDecision): void {
 
 function resetManualOverrideInputs(): void {
   manualOverrideInputs.value = fixtures.value ? buildManualOverrideInputs(fixtures.value.project.lines) : { romaji: {}, zhAssist: {} };
+}
+
+function loadManualOverrideInputs(): void {
+  const key = editorStorageKey.value;
+  if (!key || !fixtures.value) {
+    resetManualOverrideInputs();
+    return;
+  }
+
+  const base = buildManualOverrideInputs(fixtures.value.project.lines);
+  const saved = window.localStorage.getItem(key);
+  if (!saved) {
+    manualOverrideInputs.value = base;
+    return;
+  }
+
+  try {
+    manualOverrideInputs.value = sanitizeManualOverrideInputs(JSON.parse(saved), base);
+  } catch {
+    manualOverrideInputs.value = base;
+  }
+}
+
+function saveManualOverrideInputs(inputs: ManualOverrideInputMaps): void {
+  const key = editorStorageKey.value;
+  if (!key) {
+    return;
+  }
+
+  window.localStorage.setItem(key, JSON.stringify(inputs));
 }
 
 function loadReviewDecisions(): void {
@@ -226,7 +265,7 @@ async function loadDefaultFixtures(): Promise<void> {
       projectName: "内置示例 annotation-ja.json",
       draftName: "内置示例 correction-draft.json"
     };
-    resetManualOverrideInputs();
+    loadManualOverrideInputs();
   } catch {
     loadError.value = "无法加载示例 JSON。";
   }
@@ -240,7 +279,7 @@ async function handleProjectFile(event: Event): Promise<void> {
 
   try {
     fixtures.value = loadAnnotationProjectValue(await readJsonFile(file), file.name);
-    resetManualOverrideInputs();
+    loadManualOverrideInputs();
     activeTab.value = "all";
     loadError.value = null;
   } catch (error) {
@@ -307,6 +346,8 @@ async function copyCommand(command: CliCommand): Promise<void> {
 
 watch(reviewStorageKey, loadReviewDecisions);
 watch(reviewDecisions, saveReviewDecisions, { deep: true });
+watch(editorStorageKey, loadManualOverrideInputs);
+watch(manualOverrideInputs, saveManualOverrideInputs, { deep: true });
 
 onMounted(loadDefaultFixtures);
 </script>

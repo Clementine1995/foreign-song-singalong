@@ -5,7 +5,8 @@ import {
   buildReviewDecisionExport,
   buildReviewGuidance,
   createViewerLines,
-  filterViewerLines
+  filterViewerLines,
+  sanitizeManualOverrideInputs
 } from "./viewModel";
 import projectFixture from "../public/fixtures/annotation-ja.json";
 import draftFixture from "../public/fixtures/correction-draft.json";
@@ -91,6 +92,36 @@ describe("viewer model", () => {
     expect(edited.lines[0].manualOverrides.zhAssist).toBe("edited zh assist");
     expect(edited.lines[1].manualOverrides.romaji).toBeNull();
     expect(edited.lines[2].manualOverrides.zhAssist).toBeNull();
+  });
+
+  it("sanitizes saved text override drafts by known line ids", () => {
+    const base = buildManualOverrideInputs(project.lines);
+
+    expect(sanitizeManualOverrideInputs({
+      romaji: {
+        "line-001": "saved romaji",
+        "line-999": "stale"
+      },
+      zhAssist: {
+        "line-003": "saved zh",
+        "line-004": 42
+      }
+    }, base)).toMatchObject({
+      romaji: {
+        "line-001": "saved romaji",
+        "line-002": "",
+        "line-003": "",
+        "line-004": ""
+      },
+      zhAssist: {
+        "line-001": "",
+        "line-002": "",
+        "line-003": "saved zh",
+        "line-004": ""
+      }
+    });
+
+    expect(sanitizeManualOverrideInputs([], base)).toBe(base);
   });
 
   it("exports correction review decisions without changing the song json", () => {
