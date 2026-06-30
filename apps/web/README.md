@@ -1,6 +1,6 @@
 # SingBridge WebUI
 
-Vue 3 + Vite read-only viewer for CLI-generated SingBridge annotation JSON.
+Vue 3 + Vite viewer and lightweight manual-override editor for CLI-generated SingBridge annotation JSON.
 
 ## Scope
 
@@ -12,6 +12,7 @@ This WebUI is intentionally small:
 - Shows correction overlays with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and manual review guidance.
 - Classifies each correction as low-risk formatting or manual-review reading mismatch in the UI without changing the JSON schemas.
 - Filters correction overlays by low-risk formatting and manual-review guidance.
+- Edits `manualOverrides.romaji` and `manualOverrides.zhAssist` in local browser state and exports an updated annotation JSON file.
 - Tracks local correction review decisions as `pending`, `accepted`, or `ignored`.
 - Exports review decisions JSON for a later CLI or manual workflow.
 - Generates copyable CLI commands for the existing CLI workflow.
@@ -21,8 +22,8 @@ It does not:
 - Accept raw lyrics directly.
 - Run `kuromoji` or any tokenizer in the browser.
 - Execute CLI commands.
-- Edit or save project JSON.
-- Generate corrected song JSON.
+- Edit kana, difficulty notes, or generated fields.
+- Save over the original project file.
 - Infer kana from romaji.
 - Upload lyrics or project files.
 
@@ -77,12 +78,16 @@ In the WebUI:
 1. Use `选择标注 JSON` to load `song.json`.
 2. Use `加载修正建议 JSON` to load `corrections.json`.
 3. Use `全部`, `需复核`, `修正建议`, `低风险`, `需人工确认`, `待处理`, `已接受`, and `已忽略` to filter lines.
-4. Mark correction overlays as accepted or ignored when reviewed.
-5. Use `导出复核决定 JSON` to download review decisions.
+4. Edit `手动 romaji 覆盖` or `手动中文发音辅助覆盖` for line-level text overrides. Empty values export as `null`.
+5. Use `导出更新后的标注 JSON` to download an updated annotation JSON file.
+6. Mark correction overlays as accepted or ignored when reviewed.
+7. Use `导出复核决定 JSON` to download review decisions.
 
 Loading a new annotation project clears the previous correction overlay so stale suggestions are not shown against a different song.
 
 Review decisions are stored in browser `localStorage` for the current annotation/correction file pair. They do not modify the loaded annotation JSON.
+
+Manual override edits stay in browser state until exported. Exporting updated annotation JSON preserves generated `romaji` and `zhAssist` values and writes only `manualOverrides.romaji` and `manualOverrides.zhAssist`.
 
 Exported review decision JSON uses this shape:
 

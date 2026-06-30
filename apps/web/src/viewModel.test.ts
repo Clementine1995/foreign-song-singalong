@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildReviewDecisionExport, buildReviewGuidance, createViewerLines, filterViewerLines } from "./viewModel";
+import {
+  buildAnnotationProjectWithManualOverrides,
+  buildManualOverrideInputs,
+  buildReviewDecisionExport,
+  buildReviewGuidance,
+  createViewerLines,
+  filterViewerLines
+} from "./viewModel";
 import projectFixture from "../public/fixtures/annotation-ja.json";
 import draftFixture from "../public/fixtures/correction-draft.json";
 import type { AnnotationProject, RomajiCorrectionDraft } from "./types";
@@ -60,6 +67,30 @@ describe("viewer model", () => {
     expect(filterViewerLines(lines, "pending")).toEqual([]);
     expect(filterViewerLines(lines, "accepted").map((item) => item.line.id)).toEqual(["line-002"]);
     expect(filterViewerLines(lines, "ignored").map((item) => item.line.id)).toEqual(["line-003"]);
+  });
+
+  it("builds editable text overrides without changing generated fields", () => {
+    const inputs = buildManualOverrideInputs(project.lines);
+    const edited = buildAnnotationProjectWithManualOverrides(project, {
+      romaji: {
+        ...inputs.romaji,
+        "line-001": "  edited romaji  ",
+        "line-002": ""
+      },
+      zhAssist: {
+        ...inputs.zhAssist,
+        "line-001": "  edited zh assist  ",
+        "line-003": ""
+      }
+    });
+
+    expect(project.lines[0].manualOverrides.romaji).toBeNull();
+    expect(edited.lines[0].romaji).toBe(project.lines[0].romaji);
+    expect(edited.lines[0].zhAssist).toBe(project.lines[0].zhAssist);
+    expect(edited.lines[0].manualOverrides.romaji).toBe("edited romaji");
+    expect(edited.lines[0].manualOverrides.zhAssist).toBe("edited zh assist");
+    expect(edited.lines[1].manualOverrides.romaji).toBeNull();
+    expect(edited.lines[2].manualOverrides.zhAssist).toBeNull();
   });
 
   it("exports correction review decisions without changing the song json", () => {

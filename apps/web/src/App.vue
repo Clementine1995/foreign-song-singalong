@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import type { LoadedFixtures, ReviewDecision, ReviewDecisionMap, ViewerTab } from "./types";
-import { buildReviewDecisionExport, createViewerLines, filterViewerLines } from "./viewModel";
+import {
+  buildAnnotationProjectWithManualOverrides,
+  buildReviewDecisionExport,
+  buildManualOverrideInputs,
+  createViewerLines,
+  filterViewerLines,
+  type ManualOverrideInputMaps
+} from "./viewModel";
 import { buildCliCommands, defaultCliCommandInputs, type CliCommand } from "./commandBuilder";
 import {
   parseCorrectionDraft,
@@ -28,12 +35,21 @@ const draftInput = ref<HTMLInputElement | null>(null);
 const cliInputs = ref(defaultCliCommandInputs());
 const copiedCommandId = ref<string | null>(null);
 const reviewDecisions = ref<ReviewDecisionMap>({});
+const manualOverrideInputs = ref<ManualOverrideInputMaps>({ romaji: {}, zhAssist: {} });
+
+const editedProject = computed(() => {
+  if (!fixtures.value) {
+    return null;
+  }
+
+  return buildAnnotationProjectWithManualOverrides(fixtures.value.project, manualOverrideInputs.value);
+});
 
 const viewerLines = computed(() => {
-  if (!fixtures.value) {
+  if (!fixtures.value || !editedProject.value) {
     return [];
   }
-  return createViewerLines(fixtures.value.project.lines, fixtures.value.draft, reviewDecisions.value);
+  return createViewerLines(editedProject.value.lines, fixtures.value.draft, reviewDecisions.value);
 });
 
 const visibleLines = computed(() => filterViewerLines(viewerLines.value, activeTab.value));
@@ -50,7 +66,10 @@ const summary = computed(() => {
     manualReview: all.filter((item) => item.overlay?.guidance.level === "needs_manual_review").length,
     pending: all.filter((item) => item.overlay && item.reviewDecision === "pending").length,
     accepted: all.filter((item) => item.overlay && item.reviewDecision === "accepted").length,
-    ignored: all.filter((item) => item.overlay && item.reviewDecision === "ignored").length
+    ignored: all.filter((item) => item.overlay && item.reviewDecision === "ignored").length,
+    textOverrides: all.filter((item) => {
+      return typeof item.line.manualOverrides.romaji === "string" || typeof item.line.manualOverrides.zhAssist === "string";
+    }).length
   };
 });
 
@@ -113,6 +132,10 @@ function setReviewDecision(lineId: string, decision: ReviewDecision): void {
   };
 }
 
+function resetManualOverrideInputs(): void {
+  manualOverrideInputs.value = fixtures.value ? buildManualOverrideInputs(fixtures.value.project.lines) : { romaji: {}, zhAssist: {} };
+}
+
 function loadReviewDecisions(): void {
   const key = reviewStorageKey.value;
   if (!key) {
@@ -165,11 +188,23 @@ function exportReviewDecisions(): void {
     ...(fixtures.value.draftName ? { draftName: fixtures.value.draftName } : {}),
     exportedAt: new Date().toISOString()
   });
+  downloadJson(payload, "romaji-review-decisions.json");
+}
+
+function exportEditedAnnotation(): void {
+  if (!editedProject.value) {
+    return;
+  }
+
+  downloadJson(editedProject.value, "singbridge-annotation-updated.json");
+}
+
+function downloadJson(payload: unknown, filename: string): void {
   const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "romaji-review-decisions.json";
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -191,6 +226,7 @@ async function loadDefaultFixtures(): Promise<void> {
       projectName: "内置示例 annotation-ja.json",
       draftName: "内置示例 correction-draft.json"
     };
+    resetManualOverrideInputs();
   } catch {
     loadError.value = "无法加载示例 JSON。";
   }
@@ -204,6 +240,7 @@ async function handleProjectFile(event: Event): Promise<void> {
 
   try {
     fixtures.value = loadAnnotationProjectValue(await readJsonFile(file), file.name);
+    resetManualOverrideInputs();
     activeTab.value = "all";
     loadError.value = null;
   } catch (error) {
@@ -284,6 +321,7 @@ onMounted(loadDefaultFixtures);
           {{ fixtures?.project.artist ?? "静态示例" }} · 共 {{ summary.total }} 行 ·
           {{ summary.review }} 行需复核 · {{ summary.corrections }} 条修正建议 ·
           {{ summary.lowRisk }} 低风险 / {{ summary.manualReview }} 需人工确认 ·
+          {{ summary.textOverrides }} 行手动覆盖 ·
           {{ summary.pending }} 待处理 / {{ summary.accepted }} 已接受 / {{ summary.ignored }} 已忽略
         </p>
       </div>
@@ -305,6 +343,9 @@ onMounted(loadDefaultFixtures);
           <button class="file-button" type="button" @click="draftInput?.click()">加载修正建议 JSON</button>
           <button class="file-button" type="button" :disabled="summary.corrections === 0" @click="exportReviewDecisions">
             导出复核决定 JSON
+          </button>
+          <button class="file-button" type="button" :disabled="!fixtures" @click="exportEditedAnnotation">
+            导出更新后的标注 JSON
           </button>
           <input ref="projectInput" class="file-input" type="file" accept="application/json,.json" @change="handleProjectFile" />
           <input ref="draftInput" class="file-input" type="file" accept="application/json,.json" @change="handleDraftFile" />
@@ -410,10 +451,26 @@ onMounted(loadDefaultFixtures);
             <div>
               <dt>Romaji</dt>
               <dd>{{ item.line.manualOverrides.romaji ?? item.line.romaji ?? "—" }}</dd>
+              <label class="override-editor">
+                <span>手动 romaji 覆盖</span>
+                <input
+                  v-model="manualOverrideInputs.romaji[item.line.id]"
+                  type="text"
+                  :placeholder="item.line.romaji ?? '输入 romaji override'"
+                />
+              </label>
             </div>
             <div>
               <dt>中文发音辅助</dt>
               <dd>{{ item.line.manualOverrides.zhAssist ?? item.line.zhAssist ?? "—" }}</dd>
+              <label class="override-editor">
+                <span>手动中文发音辅助覆盖</span>
+                <input
+                  v-model="manualOverrideInputs.zhAssist[item.line.id]"
+                  type="text"
+                  :placeholder="item.line.zhAssist ?? '输入中文发音辅助 override'"
+                />
+              </label>
             </div>
           </dl>
 

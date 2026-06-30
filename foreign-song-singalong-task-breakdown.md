@@ -751,14 +751,23 @@ Input:
 Output:
 
 - Updated local project state.
+- Exported annotation JSON with edited text overrides.
+
+Boundary:
+
+- First editor slice only edits `manualOverrides.romaji` and `manualOverrides.zhAssist`.
+- Do not edit kana, generated fields, or difficulty notes yet.
+- Do not infer kana from romaji.
+- Do not overwrite the original loaded file; export a new JSON download.
 
 Verification:
 
-- Component tests for editing and override preservation.
+- Unit tests cover text override input mapping, export shape, clearing values to `null`, and preservation of generated fields.
+- WebUI typecheck, test, and build pass.
 
 Status:
 
-- Deferred. The current WebUI remains read-only.
+- First slice implemented as a local text-override editor for romaji and Chinese pronunciation aid.
 
 ### T7.5 Visual Direction
 
@@ -780,7 +789,7 @@ Verification:
 
 Status:
 
-- Implemented for the current read-only viewer.
+- Implemented for the current viewer and lightweight romaji-override editor.
 - `apps/web/Claude_DESIGN.md` is the primary style reference.
 - `apps/web/Spotify_DESIGN.md` is used only for music/status cues such as active, warning, and mismatch states.
 
@@ -866,6 +875,7 @@ Each task is done only when:
   - Added correction draft overlay review panels with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
   - Added local correction review decisions: `pending`, `accepted`, and `ignored`.
   - Added WebUI filters for low-risk formatting corrections and manual-review reading mismatches.
+  - Added a local text-override editor that exports updated annotation JSON without editing kana or generated fields.
   - Added review decision export as `romaji_review_decisions` JSON without modifying the loaded annotation JSON.
   - Added CLI application of accepted review decisions with `singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json`.
   - Added review workflow smoke coverage for loading, marking, filtering, and exporting decisions.
@@ -937,7 +947,7 @@ User-provided snippets exposed these important behaviors:
 - The product needs reference-romaji comparison so users can paste romaji found online and see whether generated output disagrees.
 - Romaji spacing is currently heuristic and sample-driven.
 - The current system does not infer timing from audio; all rhythm hints remain text-based.
-- WebUI is implemented as a read-only prototype, not an editor.
+- WebUI editor currently supports only local `manualOverrides.romaji` and `manualOverrides.zhAssist` edits; kana, notes, and generated fields remain read-only.
 - WebUI does not accept raw lyrics directly; raw lyrics still go through the CLI.
 
 ### Recommended Next Slice

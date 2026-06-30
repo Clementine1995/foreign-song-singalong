@@ -136,13 +136,13 @@ Rules:
 
 ### apps/web
 
-Read-only prototype added after CLI stabilization.
+Viewer and lightweight editor added after CLI stabilization.
 
 Expected stack:
 
 - Vue 3
 - Vite
-- Local component state for the current read-only prototype
+- Local component state for review decisions and text override edits
 - Pinia only if edit state becomes complex later
 - Vue Router only if more than one screen is needed
 
@@ -153,7 +153,7 @@ Rules:
 - WebUI must not import tokenizer/runtime conversion code into the browser bundle.
 - WebUI loads CLI-generated JSON files through the browser File API.
 - WebUI can generate copyable CLI command text, but must not execute CLI commands.
-- WebUI should remain read-only until loading, correction overlay review, and reference-romaji workflows are stable.
+- WebUI editing should stay scoped to stable manual override fields and must export a new JSON file instead of overwriting the loaded file.
 
 ## 5. Data Model
 
@@ -498,7 +498,7 @@ As of the current CLI MVP implementation, the repository contains:
 
 - `packages/core`: parsing, annotation schema, validation, Japanese reading, romaji, Chinese pronunciation aid, difficulty rules, manual override resolution, and Markdown/plain-text export.
 - `packages/cli`: command handling and file IO for `annotate`, `validate`, and `export`.
-- `apps/web`: Vue 3 + Vite read-only annotation viewer for CLI-generated JSON files.
+- `apps/web`: Vue 3 + Vite annotation viewer and lightweight text-override editor for CLI-generated JSON files.
 - `packages/core/fixtures/sample-validation-ja.txt`: a short synthetic fixture set for repeatable sample validation.
 
 Implemented CLI commands:
@@ -584,6 +584,7 @@ WebUI behavior:
 - Loading a new annotation project clears any previous correction draft overlay.
 - Correction overlays show current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
 - Users may mark correction overlays as `pending`, `accepted`, or `ignored`.
+- Users may edit `manualOverrides.romaji` and `manualOverrides.zhAssist` in local browser state and export an updated annotation JSON file.
 - Review decisions are stored locally in browser `localStorage` for the current annotation/correction file pair.
 - Users may export review decisions as `romaji_review_decisions` JSON for a later CLI or manual workflow.
 - The WebUI includes a CLI command helper for generating copyable PowerShell commands:
@@ -596,7 +597,7 @@ singbridge apply-romaji-reference song.json --reference reference-romaji.txt --o
 singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json
 ```
 
-The WebUI does not accept raw lyrics directly and does not run the Japanese reading adapter in the browser. Raw lyrics remain a CLI input.
+The WebUI does not accept raw lyrics directly and does not run the Japanese reading adapter in the browser. Raw lyrics remain a CLI input. The current editor does not edit kana, difficulty notes, or generated fields, and does not infer kana from romaji.
 
 Review decision export behavior:
 

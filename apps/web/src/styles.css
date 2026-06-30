@@ -438,6 +438,34 @@ dd {
   overflow-wrap: anywhere;
 }
 
+.override-editor {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.override-editor span {
+  color: var(--claude-muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.override-editor input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--claude-hairline);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--claude-ink);
+  background: rgba(250, 249, 245, 0.72);
+  font: inherit;
+}
+
+.override-editor input:focus {
+  border-color: var(--claude-coral);
+  outline: 3px solid rgba(204, 120, 92, 0.14);
+}
+
 .notes-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

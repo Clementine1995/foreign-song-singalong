@@ -1,4 +1,4 @@
-import type { AnnotationLine } from "@singbridge/core";
+import type { AnnotationLine, AnnotationProject } from "@singbridge/core";
 import type { ReviewDecision, ReviewDecisionMap, RomajiCorrectionDraft, ViewerTab } from "./types";
 
 export type OverlayStatus = "format_difference" | "reading_mismatch";
@@ -30,6 +30,13 @@ export interface ViewerLine {
   line: AnnotationLine;
   overlay?: CorrectionOverlay;
   reviewDecision: ReviewDecision;
+}
+
+export type TextOverrideInputMap = Record<string, string>;
+
+export interface ManualOverrideInputMaps {
+  romaji: TextOverrideInputMap;
+  zhAssist: TextOverrideInputMap;
 }
 
 export interface ReviewDecisionExport {
@@ -107,6 +114,42 @@ export function createViewerLines(
     overlay: overlays.get(line.id),
     reviewDecision: decisions[line.id] ?? "pending"
   }));
+}
+
+export function buildManualOverrideInputs(lines: AnnotationLine[]): ManualOverrideInputMaps {
+  return {
+    romaji: Object.fromEntries(lines.map((line) => [line.id, line.manualOverrides.romaji ?? ""])),
+    zhAssist: Object.fromEntries(lines.map((line) => [line.id, line.manualOverrides.zhAssist ?? ""]))
+  };
+}
+
+export function buildAnnotationProjectWithManualOverrides(
+  project: AnnotationProject,
+  overrides: ManualOverrideInputMaps
+): AnnotationProject {
+  return {
+    ...project,
+    lines: project.lines.map((line) => {
+      const nextRomaji = overrides.romaji[line.id];
+      const nextZhAssist = overrides.zhAssist[line.id];
+      if (nextRomaji === undefined && nextZhAssist === undefined) {
+        return line;
+      }
+
+      return {
+        ...line,
+        manualOverrides: {
+          ...line.manualOverrides,
+          ...(nextRomaji !== undefined ? { romaji: textOverrideOrNull(nextRomaji) } : {}),
+          ...(nextZhAssist !== undefined ? { zhAssist: textOverrideOrNull(nextZhAssist) } : {})
+        }
+      };
+    })
+  };
+}
+
+function textOverrideOrNull(value: string): string | null {
+  return value.trim() === "" ? null : value.trim();
 }
 
 export function filterViewerLines(lines: ViewerLine[], tab: ViewerTab): ViewerLine[] {
