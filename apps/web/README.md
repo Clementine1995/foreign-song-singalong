@@ -11,6 +11,7 @@ This WebUI is intentionally small:
 - Optionally loads local romaji correction draft JSON files such as `corrections.json`.
 - Shows correction overlays with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and manual review guidance.
 - Classifies each correction as low-risk formatting or manual-review reading mismatch in the UI without changing the JSON schemas.
+- Filters correction overlays by low-risk formatting and manual-review guidance.
 - Tracks local correction review decisions as `pending`, `accepted`, or `ignored`.
 - Exports review decisions JSON for a later CLI or manual workflow.
 - Generates copyable CLI commands for the existing CLI workflow.
@@ -75,7 +76,7 @@ In the WebUI:
 
 1. Use `选择标注 JSON` to load `song.json`.
 2. Use `加载修正建议 JSON` to load `corrections.json`.
-3. Use `全部`, `需复核`, `修正建议`, `待处理`, `已接受`, and `已忽略` to filter lines.
+3. Use `全部`, `需复核`, `修正建议`, `低风险`, `需人工确认`, `待处理`, `已接受`, and `已忽略` to filter lines.
 4. Mark correction overlays as accepted or ignored when reviewed.
 5. Use `导出复核决定 JSON` to download review decisions.
 

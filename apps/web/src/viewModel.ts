@@ -118,6 +118,14 @@ export function filterViewerLines(lines: ViewerLine[], tab: ViewerTab): ViewerLi
     return lines.filter((item) => item.overlay !== undefined);
   }
 
+  if (tab === "low_risk") {
+    return lines.filter((item) => item.overlay?.guidance.level === "low");
+  }
+
+  if (tab === "manual_review") {
+    return lines.filter((item) => item.overlay?.guidance.level === "needs_manual_review");
+  }
+
   if (tab === "pending") {
     return lines.filter((item) => item.overlay !== undefined && item.reviewDecision === "pending");
   }

@@ -13,6 +13,8 @@ const tabs: { id: ViewerTab; label: string }[] = [
   { id: "all", label: "全部" },
   { id: "review", label: "需复核" },
   { id: "corrections", label: "修正建议" },
+  { id: "low_risk", label: "低风险" },
+  { id: "manual_review", label: "需人工确认" },
   { id: "pending", label: "待处理" },
   { id: "accepted", label: "已接受" },
   { id: "ignored", label: "已忽略" }
@@ -44,6 +46,8 @@ const summary = computed(() => {
     total: all.length,
     review: all.filter((item) => item.line.needsReview || item.line.reviewReasons.length > 0).length,
     corrections: all.filter((item) => item.overlay).length,
+    lowRisk: all.filter((item) => item.overlay?.guidance.level === "low").length,
+    manualReview: all.filter((item) => item.overlay?.guidance.level === "needs_manual_review").length,
     pending: all.filter((item) => item.overlay && item.reviewDecision === "pending").length,
     accepted: all.filter((item) => item.overlay && item.reviewDecision === "accepted").length,
     ignored: all.filter((item) => item.overlay && item.reviewDecision === "ignored").length
@@ -279,6 +283,7 @@ onMounted(loadDefaultFixtures);
         <p class="subtitle">
           {{ fixtures?.project.artist ?? "静态示例" }} · 共 {{ summary.total }} 行 ·
           {{ summary.review }} 行需复核 · {{ summary.corrections }} 条修正建议 ·
+          {{ summary.lowRisk }} 低风险 / {{ summary.manualReview }} 需人工确认 ·
           {{ summary.pending }} 待处理 / {{ summary.accepted }} 已接受 / {{ summary.ignored }} 已忽略
         </p>
       </div>

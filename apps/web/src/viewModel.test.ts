@@ -47,6 +47,8 @@ describe("viewer model", () => {
     expect(filterViewerLines(lines, "all")).toHaveLength(4);
     expect(filterViewerLines(lines, "review").map((item) => item.line.id)).toEqual(["line-002", "line-004"]);
     expect(filterViewerLines(lines, "corrections").map((item) => item.line.id)).toEqual(["line-002", "line-003"]);
+    expect(filterViewerLines(lines, "low_risk").map((item) => item.line.id)).toEqual(["line-003"]);
+    expect(filterViewerLines(lines, "manual_review").map((item) => item.line.id)).toEqual(["line-002"]);
   });
 
   it("tracks local review decisions and filters them", () => {

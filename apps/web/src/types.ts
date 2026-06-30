@@ -2,7 +2,15 @@ import type { AnnotationProject, RomajiCorrectionDraft } from "@singbridge/core"
 
 export type { AnnotationProject, RomajiCorrectionDraft };
 
-export type ViewerTab = "all" | "review" | "corrections" | "pending" | "accepted" | "ignored";
+export type ViewerTab =
+  | "all"
+  | "review"
+  | "corrections"
+  | "low_risk"
+  | "manual_review"
+  | "pending"
+  | "accepted"
+  | "ignored";
 
 export type ReviewDecision = "pending" | "accepted" | "ignored";
 

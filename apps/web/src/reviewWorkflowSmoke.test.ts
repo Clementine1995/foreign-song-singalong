@@ -14,6 +14,8 @@ describe("review workflow smoke", () => {
     });
 
     expect(filterViewerLines(lines, "corrections").map((item) => item.line.id)).toEqual(["line-002", "line-003"]);
+    expect(filterViewerLines(lines, "low_risk").map((item) => item.line.id)).toEqual(["line-003"]);
+    expect(filterViewerLines(lines, "manual_review").map((item) => item.line.id)).toEqual(["line-002"]);
     expect(filterViewerLines(lines, "pending")).toEqual([]);
     expect(filterViewerLines(lines, "accepted").map((item) => item.line.id)).toEqual(["line-002"]);
     expect(filterViewerLines(lines, "ignored").map((item) => item.line.id)).toEqual(["line-003"]);
