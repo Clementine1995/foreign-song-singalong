@@ -617,6 +617,7 @@ Status:
 - Loading a new annotation project clears any previous correction overlay to avoid applying stale suggestions to a different project.
 - Correction draft overlays show current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and manual review guidance.
 - Local review decisions can now mark correction overlays as `pending`, `accepted`, or `ignored`.
+- Correction guidance can now be filtered by low-risk formatting differences and manual-review reading mismatches.
 - Review decisions stay in browser-local state/localStorage and do not modify annotation JSON.
 - Review decisions can be exported as `romaji_review_decisions` JSON for a later CLI or manual workflow.
 
@@ -864,6 +865,7 @@ Each task is done only when:
   - Added local file loading for `song.json` and optional `corrections.json`.
   - Added correction draft overlay review panels with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
   - Added local correction review decisions: `pending`, `accepted`, and `ignored`.
+  - Added WebUI filters for low-risk formatting corrections and manual-review reading mismatches.
   - Added review decision export as `romaji_review_decisions` JSON without modifying the loaded annotation JSON.
   - Added CLI application of accepted review decisions with `singbridge apply-review-decisions song.json --decisions romaji-review-decisions.json --out reviewed.json`.
   - Added review workflow smoke coverage for loading, marking, filtering, and exporting decisions.
