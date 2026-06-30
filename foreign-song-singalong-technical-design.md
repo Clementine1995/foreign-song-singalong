@@ -582,9 +582,12 @@ WebUI behavior:
 - Users may load a local annotation project JSON with the browser File API.
 - Users may optionally load a local romaji correction draft JSON.
 - Loading a new annotation project clears any previous correction draft overlay.
+- The default line view stays compact and focused on original Japanese text, romaji, and Chinese pronunciation aid.
 - Correction overlays show current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and guidance.
+- Correction overlays, review reasons, and difficulty notes live in secondary expandable sections so the practice view stays uncluttered.
 - Users may mark correction overlays as `pending`, `accepted`, or `ignored`.
 - Users may edit `manualOverrides.romaji` and `manualOverrides.zhAssist` in local browser state and export an updated annotation JSON file.
+- Lines with manual text overrides show a compact status indicator, and users may clear the current line's romaji/Chinese pronunciation-aid override drafts without affecting other lines.
 - Review decisions are stored locally in browser `localStorage` for the current annotation/correction file pair.
 - Users may export review decisions as `romaji_review_decisions` JSON for a later CLI or manual workflow.
 - The WebUI includes a CLI command helper for generating copyable PowerShell commands:

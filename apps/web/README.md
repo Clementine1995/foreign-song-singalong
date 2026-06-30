@@ -7,12 +7,15 @@ Vue 3 + Vite viewer and lightweight manual-override editor for CLI-generated Sin
 This WebUI is intentionally small:
 
 - Loads built-in fixture data by default.
+- The built-in default is a copyright-safe synthetic full-song-length demo, not real song lyrics.
 - Loads local annotation project JSON files such as `song.json`.
 - Optionally loads local romaji correction draft JSON files such as `corrections.json`.
+- Keeps the default line view as a compact practice list focused on original Japanese text, romaji, and Chinese pronunciation aid.
 - Shows correction overlays with current kana, current romaji, reference romaji, suggested romaji, `suggestedKana: null`, review reasons, and manual review guidance.
 - Classifies each correction as low-risk formatting or manual-review reading mismatch in the UI without changing the JSON schemas.
-- Filters correction overlays by low-risk formatting and manual-review guidance.
+- Keeps correction and review details in secondary expandable sections.
 - Edits `manualOverrides.romaji` and `manualOverrides.zhAssist` in local browser state and exports an updated annotation JSON file.
+- Shows line-level manual text override status and can clear the current line's romaji/Chinese pronunciation-aid overrides.
 - Tracks local correction review decisions as `pending`, `accepted`, or `ignored`.
 - Exports review decisions JSON for a later CLI or manual workflow.
 - Generates copyable CLI commands for the existing CLI workflow.
@@ -77,11 +80,13 @@ In the WebUI:
 
 1. Use `选择标注 JSON` to load `song.json`.
 2. Use `加载修正建议 JSON` to load `corrections.json`.
-3. Use `全部`, `需复核`, `修正建议`, `低风险`, `需人工确认`, `待处理`, `已接受`, and `已忽略` to filter lines.
-4. Edit `手动 romaji 覆盖` or `手动中文发音辅助覆盖` for line-level text overrides. Empty values export as `null`.
-5. Use `导出更新后的标注 JSON` to download an updated annotation JSON file.
-6. Mark correction overlays as accepted or ignored when reviewed.
-7. Use `导出复核决定 JSON` to download review decisions.
+3. Review the compact three-layer practice view: original Japanese text, romaji, and Chinese pronunciation aid.
+4. Open `编辑本行覆盖` only when you need to edit `手动 romaji 覆盖` or `手动中文发音辅助覆盖`. Empty values export as `null`.
+5. Use `清除本行覆盖` to clear the current line's romaji and Chinese pronunciation-aid override drafts.
+6. Open `发音难点与复核信息` only when you need details.
+7. Use `导出更新后的标注 JSON` to download an updated annotation JSON file.
+8. Mark correction overlays as accepted or ignored when reviewed.
+9. Use `导出复核决定 JSON` to download review decisions.
 
 Loading a new annotation project clears the previous correction overlay so stale suggestions are not shown against a different song.
 

@@ -1,0 +1,679 @@
+{
+  "version": 1,
+  "title": "架空の星あかり",
+  "artist": "SingBridge 合成デモ",
+  "language": "ja",
+  "source": {
+    "type": "file_import",
+    "note": "Copyright-safe synthetic full-song demo for WebUI visual review.",
+    "inputFile": "synthetic-full-demo.txt"
+  },
+  "settings": {
+    "pronunciationMode": "zh_assist",
+    "romajiStyle": "singing_friendly"
+  },
+  "lines": [
+    {
+      "id": "full-line-001",
+      "index": 0,
+      "original": "朝のひかりが",
+      "reading": "あさのひかりが",
+      "kana": "あさのひかりが",
+      "romaji": "asa no hikari ga",
+      "zhAssist": "a sa no hi ka ri ga",
+      "difficultyNotes": [
+        {
+          "type": "ra_row",
+          "span": "り",
+          "message": "ら行接近 l/r 之间，轻轻弹一下舌尖。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": false,
+      "reviewReasons": [],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-002",
+      "index": 1,
+      "original": "窓をそっとたたく",
+      "reading": "まどをそっとたたく",
+      "kana": "まどをそっとたたく",
+      "romaji": "mado wo sotto tataku",
+      "zhAssist": "ma do wo so [停半拍] to ta ta ku",
+      "difficultyNotes": [
+        {
+          "type": "sokuon",
+          "span": "っ",
+          "message": "小 っ 表示在下一个辅音前短暂停顿。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-003",
+      "index": 2,
+      "original": "眠たい街のすみで",
+      "reading": "ねむたいまちのすみで",
+      "kana": "ねむたいまちのすみで",
+      "romaji": "nemutai machi no sumi de",
+      "zhAssist": "ne mu ta i ma chi no su mi de",
+      "difficultyNotes": [
+        {
+          "type": "shi_chi_ji",
+          "span": "ち",
+          "message": "ち 接近 chi，不要读成普通中文 qi。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": false,
+      "reviewReasons": [],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-004",
+      "index": 3,
+      "original": "小さな声をさがした",
+      "reading": "ちいさなこえをさがした",
+      "kana": "ちいさなこえをさがした",
+      "romaji": "chiisana koe wo sagashita",
+      "zhAssist": "chi i sa na ko e wo sa ga shi ta",
+      "difficultyNotes": [
+        {
+          "type": "long_vowel",
+          "span": "い",
+          "message": "连续元音可以顺着节拍拉开，不要急着合并。",
+          "confidence": "medium"
+        },
+        {
+          "type": "shi_chi_ji",
+          "span": "し",
+          "message": "し 接近 shi，舌面放松，不要读成 si。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-005",
+      "index": 4,
+      "original": "ゆれる雲のむこう",
+      "reading": "ゆれるくものむこう",
+      "kana": "ゆれるくものむこう",
+      "romaji": "yureru kumo no mukou",
+      "zhAssist": "yu re ru ku mo no mu ko u",
+      "difficultyNotes": [
+        {
+          "type": "long_vowel",
+          "span": "う",
+          "message": "结尾元音可以轻轻延长，跟住旋律尾音。",
+          "confidence": "medium"
+        },
+        {
+          "type": "ra_row",
+          "span": "れ",
+          "message": "れ 接近 le/re 之间，不要读成中文“热”。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-006",
+      "index": 5,
+      "original": "名前のないメロディー",
+      "reading": "なまえのないめろでぃー",
+      "kana": "なまえのないめろでぃー",
+      "romaji": "namae no nai merodii",
+      "zhAssist": "na ma e no na i me ro di i",
+      "difficultyNotes": [
+        {
+          "type": "long_vowel",
+          "span": "ー",
+          "message": "长音符号表示前一个元音延长。",
+          "confidence": "high"
+        },
+        {
+          "type": "ra_row",
+          "span": "ろ",
+          "message": "ろ 接近 lo/ro 之间，舌尖轻触。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-007",
+      "index": 6,
+      "original": "胸にしまって",
+      "reading": "むねにしまって",
+      "kana": "むねにしまって",
+      "romaji": "mune ni shimatte",
+      "zhAssist": "mu ne ni shi ma [停半拍] te",
+      "difficultyNotes": [
+        {
+          "type": "shi_chi_ji",
+          "span": "し",
+          "message": "し 接近 shi，舌面放松。",
+          "confidence": "high"
+        },
+        {
+          "type": "sokuon",
+          "span": "っ",
+          "message": "小 っ 在 te 前短暂停住半拍。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-008",
+      "index": 7,
+      "original": "今日も歩きだす",
+      "reading": "きょうもあるきだす",
+      "kana": "きょうもあるきだす",
+      "romaji": "kyou mo aruki dasu",
+      "zhAssist": "kyo u mo a ru ki da su",
+      "difficultyNotes": [
+        {
+          "type": "youon",
+          "span": "きょ",
+          "message": "拗音要连成一个音节 kyo，不要拆成 ki-yo。",
+          "confidence": "high"
+        },
+        {
+          "type": "long_vowel",
+          "span": "う",
+          "message": "きょう 的 ou 是拉长感。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-009",
+      "index": 8,
+      "original": "星あかり 追いかけて",
+      "reading": "ほしあかり おいかけて",
+      "kana": "ほしあかり おいかけて",
+      "romaji": "hoshi akari oikakete",
+      "zhAssist": "ho shi a ka ri o i ka ke te",
+      "difficultyNotes": [
+        {
+          "type": "shi_chi_ji",
+          "span": "し",
+          "message": "し 接近 shi，不要读成 si。",
+          "confidence": "high"
+        },
+        {
+          "type": "ra_row",
+          "span": "り",
+          "message": "り 是轻弹舌的 l/r 中间音。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": "hoshiakari oikakete",
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-010",
+      "index": 9,
+      "original": "遠い坂をこえて",
+      "reading": "とおいさかをこえて",
+      "kana": "とおいさかをこえて",
+      "romaji": "tooi saka wo koete",
+      "zhAssist": "to o i sa ka wo ko e te",
+      "difficultyNotes": [
+        {
+          "type": "long_vowel",
+          "span": "お",
+          "message": "とおい 的 oo 要唱出拉长。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-011",
+      "index": 10,
+      "original": "まだ見ぬ明日へ",
+      "reading": "まだみぬあしたへ",
+      "kana": "まだみぬあしたへ",
+      "romaji": "mada minu ashita e",
+      "zhAssist": "ma da mi nu a shi ta e",
+      "difficultyNotes": [
+        {
+          "type": "shi_chi_ji",
+          "span": "し",
+          "message": "し 接近 shi，注意不要读扁。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-012",
+      "index": 11,
+      "original": "この手をのばすよ",
+      "reading": "このてをのばすよ",
+      "kana": "このてをのばすよ",
+      "romaji": "kono te wo nobasu yo",
+      "zhAssist": "ko no te wo no ba su yo",
+      "difficultyNotes": [],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": "ko no te wo no ba su yo-o",
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-013",
+      "index": 12,
+      "original": "La la la",
+      "reading": "La la la",
+      "romaji": "La la la",
+      "zhAssist": "La la la",
+      "difficultyNotes": [],
+      "needsReview": true,
+      "reviewReasons": ["non_japanese_line"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-014",
+      "index": 13,
+      "original": "風がそっと笑う",
+      "reading": "かぜがそっとわらう",
+      "kana": "かぜがそっとわらう",
+      "romaji": "kaze ga sotto warau",
+      "zhAssist": "ka ze ga so [停半拍] to wa ra u",
+      "difficultyNotes": [
+        {
+          "type": "sokuon",
+          "span": "っ",
+          "message": "小 っ 表示短暂停顿。",
+          "confidence": "high"
+        },
+        {
+          "type": "ra_row",
+          "span": "ら",
+          "message": "ら 接近 la/ra 之间。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-015",
+      "index": 14,
+      "original": "雨のにおい残して",
+      "reading": "あめのにおいのこして",
+      "kana": "あめのにおいのこして",
+      "romaji": "ame no nioi nokoshite",
+      "zhAssist": "a me no ni o i no ko shi te",
+      "difficultyNotes": [
+        {
+          "type": "shi_chi_ji",
+          "span": "し",
+          "message": "し 接近 shi，不要读成 si。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-016",
+      "index": 15,
+      "original": "ふいに胸が鳴った",
+      "reading": "ふいにむねがなった",
+      "kana": "ふいにむねがなった",
+      "romaji": "fui ni mune ga natta",
+      "zhAssist": "fu i ni mu ne ga na [停半拍] ta",
+      "difficultyNotes": [
+        {
+          "type": "fu",
+          "span": "ふ",
+          "message": "ふ 不是中文 fu 的强唇齿音，双唇轻轻送气。",
+          "confidence": "high"
+        },
+        {
+          "type": "sokuon",
+          "span": "っ",
+          "message": "小 っ 在 ta 前短暂停顿。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-017",
+      "index": 16,
+      "original": "忘れかけた夢を",
+      "reading": "わすれかけたゆめを",
+      "kana": "わすれかけたゆめを",
+      "romaji": "wasure kaketa yume wo",
+      "zhAssist": "wa su re ka ke ta yu me wo",
+      "difficultyNotes": [
+        {
+          "type": "ra_row",
+          "span": "れ",
+          "message": "れ 接近 le/re 之间，别读成中文“热”。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-018",
+      "index": 17,
+      "original": "ポケットから出した",
+      "reading": "ぽけっとからだした",
+      "kana": "ぽけっとからだした",
+      "romaji": "poketto kara dashita",
+      "zhAssist": "po ke [停半拍] to ka ra da shi ta",
+      "difficultyNotes": [
+        {
+          "type": "sokuon",
+          "span": "っ",
+          "message": "小 っ 在 to 前短暂停住。",
+          "confidence": "high"
+        },
+        {
+          "type": "ra_row",
+          "span": "ら",
+          "message": "ら 接近 la/ra 之间。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": false,
+      "reviewReasons": [],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-019",
+      "index": 18,
+      "original": "星あかり 追いかけて",
+      "reading": "ほしあかり おいかけて",
+      "kana": "ほしあかり おいかけて",
+      "romaji": "hoshi akari oikakete",
+      "zhAssist": "ho shi a ka ri o i ka ke te",
+      "difficultyNotes": [
+        {
+          "type": "shi_chi_ji",
+          "span": "し",
+          "message": "し 接近 shi。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-020",
+      "index": 19,
+      "original": "遠い坂をこえて",
+      "reading": "とおいさかをこえて",
+      "kana": "とおいさかをこえて",
+      "romaji": "tooi saka wo koete",
+      "zhAssist": "to o i sa ka wo ko e te",
+      "difficultyNotes": [
+        {
+          "type": "long_vowel",
+          "span": "お",
+          "message": "とおい 的 oo 要唱出拉长。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-021",
+      "index": 20,
+      "original": "まだ見ぬ明日へ",
+      "reading": "まだみぬあしたへ",
+      "kana": "まだみぬあしたへ",
+      "romaji": "mada minu ashita e",
+      "zhAssist": "ma da mi nu a shi ta e",
+      "difficultyNotes": [
+        {
+          "type": "shi_chi_ji",
+          "span": "し",
+          "message": "し 接近 shi。",
+          "confidence": "high"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-022",
+      "index": 21,
+      "original": "この手をのばすよ",
+      "reading": "このてをのばすよ",
+      "kana": "このてをのばすよ",
+      "romaji": "kono te wo nobasu yo",
+      "zhAssist": "ko no te wo no ba su yo",
+      "difficultyNotes": [],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-023",
+      "index": 22,
+      "original": "夜が明けるまで",
+      "reading": "よるがあけるまで",
+      "kana": "よるがあけるまで",
+      "romaji": "yoru ga akeru made",
+      "zhAssist": "yo ru ga a ke ru ma de",
+      "difficultyNotes": [
+        {
+          "type": "ra_row",
+          "span": "る",
+          "message": "る 接近 lu/ru 之间，轻触舌尖。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": true,
+      "reviewReasons": ["unknown_kanji_reading"],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    },
+    {
+      "id": "full-line-024",
+      "index": 23,
+      "original": "そばで歌っている",
+      "reading": "そばでうたっている",
+      "kana": "そばでうたっている",
+      "romaji": "soba de utatte iru",
+      "zhAssist": "so ba de u ta [停半拍] te i ru",
+      "difficultyNotes": [
+        {
+          "type": "sokuon",
+          "span": "っ",
+          "message": "小 っ 在 te 前短暂停顿。",
+          "confidence": "high"
+        },
+        {
+          "type": "ra_row",
+          "span": "る",
+          "message": "る 接近 lu/ru 之间。",
+          "confidence": "medium"
+        }
+      ],
+      "needsReview": false,
+      "reviewReasons": [],
+      "manualOverrides": {
+        "reading": null,
+        "kana": null,
+        "romaji": null,
+        "zhAssist": null,
+        "notes": []
+      }
+    }
+  ]
+}

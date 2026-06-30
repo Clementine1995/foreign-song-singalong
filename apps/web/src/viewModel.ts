@@ -30,6 +30,7 @@ export interface ViewerLine {
   line: AnnotationLine;
   overlay?: CorrectionOverlay;
   reviewDecision: ReviewDecision;
+  manualOverrideState: ManualTextOverrideState;
 }
 
 export type TextOverrideInputMap = Record<string, string>;
@@ -37,6 +38,12 @@ export type TextOverrideInputMap = Record<string, string>;
 export interface ManualOverrideInputMaps {
   romaji: TextOverrideInputMap;
   zhAssist: TextOverrideInputMap;
+}
+
+export interface ManualTextOverrideState {
+  hasRomaji: boolean;
+  hasZhAssist: boolean;
+  labels: string[];
 }
 
 export interface ReviewDecisionExport {
@@ -112,8 +119,22 @@ export function createViewerLines(
   return lines.map((line) => ({
     line,
     overlay: overlays.get(line.id),
-    reviewDecision: decisions[line.id] ?? "pending"
+    reviewDecision: decisions[line.id] ?? "pending",
+    manualOverrideState: buildManualTextOverrideState(line)
   }));
+}
+
+export function buildManualTextOverrideState(line: AnnotationLine): ManualTextOverrideState {
+  const hasRomaji = typeof line.manualOverrides.romaji === "string";
+  const hasZhAssist = typeof line.manualOverrides.zhAssist === "string";
+  return {
+    hasRomaji,
+    hasZhAssist,
+    labels: [
+      ...(hasRomaji ? ["Romaji"] : []),
+      ...(hasZhAssist ? ["中文发音辅助"] : [])
+    ]
+  };
 }
 
 export function buildManualOverrideInputs(lines: AnnotationLine[]): ManualOverrideInputMaps {

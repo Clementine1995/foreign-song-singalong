@@ -770,6 +770,9 @@ Status:
 
 - First slice implemented as a local text-override editor for romaji and Chinese pronunciation aid.
 - Editor drafts are restored from browser-local storage for the current annotation project.
+- Lines with active text overrides show a manual-override status indicator.
+- Users can clear the current line's romaji and Chinese pronunciation-aid override drafts without changing other lines.
+- The default WebUI line view is now compact and practice-first: original Japanese text, romaji, and Chinese pronunciation aid remain visible, while manual editing and review/correction details are secondary expandable content.
 
 ### T7.5 Visual Direction
 

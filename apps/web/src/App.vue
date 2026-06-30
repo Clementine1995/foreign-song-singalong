@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import type { LoadedFixtures, ReviewDecision, ReviewDecisionMap, ViewerTab } from "./types";
+import type { LoadedFixtures, ReviewDecision, ReviewDecisionMap } from "./types";
 import {
   buildAnnotationProjectWithManualOverrides,
   buildReviewDecisionExport,
   buildManualOverrideInputs,
   createViewerLines,
-  filterViewerLines,
   sanitizeManualOverrideInputs,
   type ManualOverrideInputMaps
 } from "./viewModel";
@@ -17,18 +16,6 @@ import {
 } from "./fileValidation";
 import { loadAnnotationProjectValue, loadCorrectionDraftValue } from "./localJsonLoad";
 
-const tabs: { id: ViewerTab; label: string }[] = [
-  { id: "all", label: "全部" },
-  { id: "review", label: "需复核" },
-  { id: "corrections", label: "修正建议" },
-  { id: "low_risk", label: "低风险" },
-  { id: "manual_review", label: "需人工确认" },
-  { id: "pending", label: "待处理" },
-  { id: "accepted", label: "已接受" },
-  { id: "ignored", label: "已忽略" }
-];
-
-const activeTab = ref<ViewerTab>("all");
 const fixtures = ref<LoadedFixtures | null>(null);
 const loadError = ref<string | null>(null);
 const projectInput = ref<HTMLInputElement | null>(null);
@@ -53,24 +40,14 @@ const viewerLines = computed(() => {
   return createViewerLines(editedProject.value.lines, fixtures.value.draft, reviewDecisions.value);
 });
 
-const visibleLines = computed(() => filterViewerLines(viewerLines.value, activeTab.value));
-
 const cliCommands = computed(() => buildCliCommands(cliInputs.value));
 
 const summary = computed(() => {
   const all = viewerLines.value;
   return {
     total: all.length,
-    review: all.filter((item) => item.line.needsReview || item.line.reviewReasons.length > 0).length,
     corrections: all.filter((item) => item.overlay).length,
-    lowRisk: all.filter((item) => item.overlay?.guidance.level === "low").length,
-    manualReview: all.filter((item) => item.overlay?.guidance.level === "needs_manual_review").length,
-    pending: all.filter((item) => item.overlay && item.reviewDecision === "pending").length,
-    accepted: all.filter((item) => item.overlay && item.reviewDecision === "accepted").length,
-    ignored: all.filter((item) => item.overlay && item.reviewDecision === "ignored").length,
-    textOverrides: all.filter((item) => {
-      return typeof item.line.manualOverrides.romaji === "string" || typeof item.line.manualOverrides.zhAssist === "string";
-    }).length
+    textOverrides: all.filter((item) => item.manualOverrideState.labels.length > 0).length
   };
 });
 
@@ -143,6 +120,19 @@ function setReviewDecision(lineId: string, decision: ReviewDecision): void {
 
 function resetManualOverrideInputs(): void {
   manualOverrideInputs.value = fixtures.value ? buildManualOverrideInputs(fixtures.value.project.lines) : { romaji: {}, zhAssist: {} };
+}
+
+function clearLineManualOverrides(lineId: string): void {
+  manualOverrideInputs.value = {
+    romaji: {
+      ...manualOverrideInputs.value.romaji,
+      [lineId]: ""
+    },
+    zhAssist: {
+      ...manualOverrideInputs.value.zhAssist,
+      [lineId]: ""
+    }
+  };
 }
 
 function loadManualOverrideInputs(): void {
@@ -251,19 +241,21 @@ function downloadJson(payload: unknown, filename: string): void {
 async function loadDefaultFixtures(): Promise<void> {
   try {
     const [projectResponse, draftResponse] = await Promise.all([
-      fetch("/fixtures/annotation-ja.json"),
-      fetch("/fixtures/correction-draft.json")
+      fetch("/fixtures/annotation-full-demo.json"),
+      fetch("/fixtures/correction-draft-full-demo.json")
     ]);
 
     if (!projectResponse.ok || !draftResponse.ok) {
       throw new Error("fixture_load_failed");
     }
 
+    const projectJson = await projectResponse.json();
+    const draftJson = await draftResponse.json();
     fixtures.value = {
-      project: loadAnnotationProjectValue(await projectResponse.json(), "内置示例 annotation-ja.json").project,
-      draft: parseCorrectionDraft(await draftResponse.json()),
-      projectName: "内置示例 annotation-ja.json",
-      draftName: "内置示例 correction-draft.json"
+      project: loadAnnotationProjectValue(projectJson, "内置完整合成示例 annotation-full-demo.json").project,
+      draft: parseCorrectionDraft(draftJson),
+      projectName: "内置完整合成示例 annotation-full-demo.json",
+      draftName: "内置完整合成示例 correction-draft-full-demo.json"
     };
     loadManualOverrideInputs();
   } catch {
@@ -280,7 +272,6 @@ async function handleProjectFile(event: Event): Promise<void> {
   try {
     fixtures.value = loadAnnotationProjectValue(await readJsonFile(file), file.name);
     loadManualOverrideInputs();
-    activeTab.value = "all";
     loadError.value = null;
   } catch (error) {
     loadError.value = errorMessage(error);
@@ -303,7 +294,6 @@ async function handleDraftFile(event: Event): Promise<void> {
 
   try {
     fixtures.value = loadCorrectionDraftValue(fixtures.value, await readJsonFile(file), file.name);
-    activeTab.value = "corrections";
     loadError.value = null;
   } catch (error) {
     loadError.value = errorMessage(error);
@@ -359,26 +349,10 @@ onMounted(loadDefaultFixtures);
         <p class="eyebrow">SingBridge 标注预览</p>
         <h1>{{ fixtures?.project.title ?? "日语歌词标注查看器" }}</h1>
         <p class="subtitle">
-          {{ fixtures?.project.artist ?? "静态示例" }} · 共 {{ summary.total }} 行 ·
-          {{ summary.review }} 行需复核 · {{ summary.corrections }} 条修正建议 ·
-          {{ summary.lowRisk }} 低风险 / {{ summary.manualReview }} 需人工确认 ·
-          {{ summary.textOverrides }} 行手动覆盖 ·
-          {{ summary.pending }} 待处理 / {{ summary.accepted }} 已接受 / {{ summary.ignored }} 已忽略
+          {{ fixtures?.project.artist ?? "静态示例" }} · 共 {{ summary.total }} 行 · {{ summary.textOverrides }} 行手动覆盖
         </p>
       </div>
       <div class="topbar-actions">
-        <nav class="tabs" aria-label="歌词行筛选">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            class="tab-button"
-            :class="{ active: activeTab === tab.id }"
-            type="button"
-            @click="activeTab = tab.id"
-          >
-            {{ tab.label }}
-          </button>
-        </nav>
         <div class="file-actions">
           <button class="file-button" type="button" @click="projectInput?.click()">选择标注 JSON</button>
           <button class="file-button" type="button" @click="draftInput?.click()">加载修正建议 JSON</button>
@@ -399,10 +373,11 @@ onMounted(loadDefaultFixtures);
     <section v-else class="source-strip">
       <span>标注文件：{{ fixtures.projectName }}</span>
       <span>修正建议：{{ fixtures.draftName ?? "未加载" }}</span>
-      <span>复核决定保存在此浏览器，不会改写原 JSON。</span>
+      <span>编辑草稿保存在此浏览器，不会改写原 JSON。</span>
     </section>
 
-    <section class="cli-helper" aria-labelledby="cli-helper-title">
+    <details class="cli-helper">
+      <summary class="cli-summary">CLI 生成流程</summary>
       <div class="cli-helper-heading">
         <div>
           <p class="eyebrow">CLI 生成流程</p>
@@ -460,11 +435,11 @@ onMounted(loadDefaultFixtures);
           <code>{{ command.command }}</code>
         </article>
       </div>
-    </section>
+    </details>
 
     <section v-if="fixtures" class="line-list" aria-live="polite">
       <article
-        v-for="item in visibleLines"
+        v-for="item in viewerLines"
         :key="item.line.id"
         class="lyric-line"
         :class="{
@@ -480,18 +455,27 @@ onMounted(loadDefaultFixtures);
         <div class="line-body">
           <div class="line-heading">
             <h2>{{ item.line.original }}</h2>
-            <span v-if="item.overlay" class="status-pill">{{ statusLabel(item.overlay.status) }}</span>
-            <span v-else-if="item.line.needsReview" class="status-pill quiet">需复核</span>
           </div>
 
           <dl class="layers">
             <div>
-              <dt>Kana</dt>
-              <dd>{{ item.line.manualOverrides.kana ?? item.line.kana ?? "—" }}</dd>
-            </div>
-            <div>
               <dt>Romaji</dt>
               <dd>{{ item.line.manualOverrides.romaji ?? item.line.romaji ?? "—" }}</dd>
+            </div>
+            <div>
+              <dt>中文发音辅助</dt>
+              <dd>{{ item.line.manualOverrides.zhAssist ?? item.line.zhAssist ?? "—" }}</dd>
+            </div>
+          </dl>
+
+          <details class="edit-details">
+            <summary>
+              <span v-if="item.manualOverrideState.labels.length">
+                已手动覆盖：{{ item.manualOverrideState.labels.join(" / ") }}
+              </span>
+              <span v-else>编辑本行覆盖</span>
+            </summary>
+            <div class="override-editor-grid">
               <label class="override-editor">
                 <span>手动 romaji 覆盖</span>
                 <input
@@ -500,10 +484,6 @@ onMounted(loadDefaultFixtures);
                   :placeholder="item.line.romaji ?? '输入 romaji override'"
                 />
               </label>
-            </div>
-            <div>
-              <dt>中文发音辅助</dt>
-              <dd>{{ item.line.manualOverrides.zhAssist ?? item.line.zhAssist ?? "—" }}</dd>
               <label class="override-editor">
                 <span>手动中文发音辅助覆盖</span>
                 <input
@@ -512,92 +492,108 @@ onMounted(loadDefaultFixtures);
                   :placeholder="item.line.zhAssist ?? '输入中文发音辅助 override'"
                 />
               </label>
+              <div class="manual-override-actions">
+                <span v-if="item.manualOverrideState.labels.length">
+                  已手动覆盖：{{ item.manualOverrideState.labels.join(" / ") }}
+                </span>
+                <span v-else>暂无手动覆盖</span>
+                <button
+                  type="button"
+                  :disabled="item.manualOverrideState.labels.length === 0"
+                  @click="clearLineManualOverrides(item.line.id)"
+                >
+                  清除本行覆盖
+                </button>
+              </div>
             </div>
-          </dl>
+          </details>
 
-          <div class="notes-grid">
-            <section>
-              <h3>发音难点</h3>
-              <ul v-if="item.line.difficultyNotes.length">
-                <li v-for="note in item.line.difficultyNotes" :key="`${note.type}-${note.span}-${note.message}`">
-                  <strong>{{ note.span }}</strong> {{ note.message }}
-                </li>
-              </ul>
-              <p v-else class="muted">暂无发音难点。</p>
-            </section>
-            <section>
-              <h3>复核原因</h3>
-              <ul v-if="item.line.reviewReasons.length">
-                <li v-for="reason in item.line.reviewReasons" :key="reason">{{ reviewReasonLabel(reason) }}</li>
-              </ul>
-              <p v-else class="muted">暂无复核标记。</p>
-            </section>
-          </div>
+          <details class="review-details">
+            <summary>发音难点与复核信息</summary>
+            <div class="notes-grid">
+              <section>
+                <h3>发音难点</h3>
+                <ul v-if="item.line.difficultyNotes.length">
+                  <li v-for="note in item.line.difficultyNotes" :key="`${note.type}-${note.span}-${note.message}`">
+                    <strong>{{ note.span }}</strong> {{ note.message }}
+                  </li>
+                </ul>
+                <p v-else class="muted">暂无发音难点。</p>
+              </section>
+              <section>
+                <h3>复核原因</h3>
+                <ul v-if="item.line.reviewReasons.length">
+                  <li v-for="reason in item.line.reviewReasons" :key="reason">{{ reviewReasonLabel(reason) }}</li>
+                </ul>
+                <p v-else class="muted">暂无复核标记。</p>
+              </section>
+            </div>
 
-          <aside v-if="item.overlay" class="overlay-panel">
-            <div class="overlay-summary" :class="`guidance-${item.overlay.guidance.level}`">
-              <span>修正类型</span>
-              <div class="overlay-summary-row">
-                <strong>{{ item.overlay.guidance.title }}</strong>
-                <em>{{ reviewDecisionLabel(item.reviewDecision) }}</em>
+            <aside v-if="item.overlay" class="overlay-panel">
+              <div class="overlay-summary" :class="`guidance-${item.overlay.guidance.level}`">
+                <span>修正类型</span>
+                <div class="overlay-summary-row">
+                  <strong>{{ item.overlay.guidance.title }}</strong>
+                  <em>{{ reviewDecisionLabel(item.reviewDecision) }}</em>
+                </div>
+                <div class="guidance-row">
+                  <b>{{ item.overlay.guidance.label }}</b>
+                  <p>{{ item.overlay.guidance.action }}</p>
+                </div>
+                <p>{{ item.overlay.guidance.detail }}</p>
               </div>
-              <div class="guidance-row">
-                <b>{{ item.overlay.guidance.label }}</b>
-                <p>{{ item.overlay.guidance.action }}</p>
+              <div class="overlay-comparison">
+                <div>
+                  <span>当前 kana</span>
+                  <strong>{{ item.overlay.currentKana ?? "—" }}</strong>
+                </div>
+                <div>
+                  <span>当前 romaji</span>
+                  <strong>{{ item.overlay.currentRomaji ?? "—" }}</strong>
+                </div>
+                <div>
+                  <span>参考 romaji</span>
+                  <strong>{{ item.overlay.referenceRomaji }}</strong>
+                </div>
+                <div>
+                  <span>建议 romaji</span>
+                  <strong>{{ item.overlay.suggestedRomaji }}</strong>
+                </div>
               </div>
-              <p>{{ item.overlay.guidance.detail }}</p>
-            </div>
-            <div class="overlay-comparison">
-              <div>
-                <span>当前 kana</span>
-                <strong>{{ item.overlay.currentKana ?? "—" }}</strong>
+              <div class="overlay-kana-warning">
+                <span>建议 kana</span>
+                <strong>{{ item.overlay.suggestedKana ?? "null" }}</strong>
+                <p>不会从 romaji 自动反推 kana，需要人工确认。</p>
               </div>
-              <div>
-                <span>当前 romaji</span>
-                <strong>{{ item.overlay.currentRomaji ?? "—" }}</strong>
+              <div class="overlay-review-reasons">
+                <span>复核原因</span>
+                <p v-if="item.overlay.reviewReasons.length">
+                  {{ item.overlay.reviewReasons.map(reviewReasonLabel).join("、") }}
+                </p>
+                <p v-else>无额外复核原因。</p>
               </div>
-              <div>
-                <span>参考 romaji</span>
-                <strong>{{ item.overlay.referenceRomaji }}</strong>
+              <p class="overlay-note">{{ item.overlay.note }}</p>
+              <div class="review-actions" aria-label="复核决定">
+                <button
+                  type="button"
+                  :class="{ active: item.reviewDecision === 'accepted' }"
+                  @click="setReviewDecision(item.line.id, 'accepted')"
+                >
+                  接受建议
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: item.reviewDecision === 'ignored' }"
+                  @click="setReviewDecision(item.line.id, 'ignored')"
+                >
+                  忽略建议
+                </button>
+                <button type="button" @click="setReviewDecision(item.line.id, 'pending')">
+                  重置待处理
+                </button>
               </div>
-              <div>
-                <span>建议 romaji</span>
-                <strong>{{ item.overlay.suggestedRomaji }}</strong>
-              </div>
-            </div>
-            <div class="overlay-kana-warning">
-              <span>建议 kana</span>
-              <strong>{{ item.overlay.suggestedKana ?? "null" }}</strong>
-              <p>不会从 romaji 自动反推 kana，需要人工确认。</p>
-            </div>
-            <div class="overlay-review-reasons">
-              <span>复核原因</span>
-              <p v-if="item.overlay.reviewReasons.length">
-                {{ item.overlay.reviewReasons.map(reviewReasonLabel).join("、") }}
-              </p>
-              <p v-else>无额外复核原因。</p>
-            </div>
-            <p class="overlay-note">{{ item.overlay.note }}</p>
-            <div class="review-actions" aria-label="复核决定">
-              <button
-                type="button"
-                :class="{ active: item.reviewDecision === 'accepted' }"
-                @click="setReviewDecision(item.line.id, 'accepted')"
-              >
-                接受建议
-              </button>
-              <button
-                type="button"
-                :class="{ active: item.reviewDecision === 'ignored' }"
-                @click="setReviewDecision(item.line.id, 'ignored')"
-              >
-                忽略建议
-              </button>
-              <button type="button" @click="setReviewDecision(item.line.id, 'pending')">
-                重置待处理
-              </button>
-            </div>
-          </aside>
+            </aside>
+          </details>
         </div>
       </article>
     </section>

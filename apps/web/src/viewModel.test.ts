@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAnnotationProjectWithManualOverrides,
   buildManualOverrideInputs,
+  buildManualTextOverrideState,
   buildReviewDecisionExport,
   buildReviewGuidance,
   createViewerLines,
@@ -92,6 +93,30 @@ describe("viewer model", () => {
     expect(edited.lines[0].manualOverrides.zhAssist).toBe("edited zh assist");
     expect(edited.lines[1].manualOverrides.romaji).toBeNull();
     expect(edited.lines[2].manualOverrides.zhAssist).toBeNull();
+  });
+
+  it("derives manual text override status for viewer rows", () => {
+    const inputs = buildManualOverrideInputs(project.lines);
+    const edited = buildAnnotationProjectWithManualOverrides(project, {
+      romaji: {
+        ...inputs.romaji,
+        "line-001": "manual romaji"
+      },
+      zhAssist: {
+        ...inputs.zhAssist,
+        "line-001": "manual zh",
+        "line-002": ""
+      }
+    });
+    const lines = createViewerLines(edited.lines, draft);
+
+    expect(lines[0].manualOverrideState).toEqual({
+      hasRomaji: true,
+      hasZhAssist: true,
+      labels: ["Romaji", "中文发音辅助"]
+    });
+    expect(lines[1].manualOverrideState.labels).toEqual([]);
+    expect(buildManualTextOverrideState(edited.lines[0]).labels).toEqual(["Romaji", "中文发音辅助"]);
   });
 
   it("sanitizes saved text override drafts by known line ids", () => {

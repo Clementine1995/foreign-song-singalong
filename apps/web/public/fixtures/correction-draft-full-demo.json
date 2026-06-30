@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "type": "romaji_correction_draft",
+  "source": {
+    "projectFile": "annotation-full-demo.json",
+    "referenceFile": "reference-romaji.txt",
+    "note": "Empty correction draft for the synthetic full-song WebUI demo."
+  },
+  "corrections": []
+}
